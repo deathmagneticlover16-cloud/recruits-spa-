@@ -1,0 +1,43 @@
+{
+  "combat.stab_flesh": {
+    "subtitle": "subtitles.recruits_serious_animations.combat.stab_flesh",
+    "sounds": [
+      "recruits_serious_animations:combat/stab_01"
+    ]
+  },
+  "combat.weapon_clash": {
+    "subtitle": "subtitles.recruits_serious_animations.combat.weapon_clash",
+    "sounds": [
+      "recruits_serious_animations:combat/weapon_clash_01"
+    ]
+  },
+  "combat.body_fall": {
+    "subtitle": "subtitles.recruits_serious_animations.combat.body_fall",
+    "sounds": [
+      "recruits_serious_animations:combat/body_fall_01"
+    ]
+  },
+  "combat.death_vocal": {
+    "subtitle": "subtitles.recruits_serious_animations.combat.death_vocal",
+    "sounds": [
+      "recruits_serious_animations:combat/death_01"
+    ]
+  },
+  "combat.pain_vocal": {
+    "subtitle": "subtitles.recruits_serious_animations.combat.pain_vocal",
+    "sounds": [
+      "recruits_serious_animations:combat/pain_01"
+    ]
+  },
+  "combat.shield_hit": {
+    "subtitle": "subtitles.recruits_serious_animations.combat.shield_hit",
+    "sounds": [
+      "recruits_serious_animations:combat/shield_hit_01",
+      "recruits_serious_animations:combat/shield_hit_02",
+      "recruits_serious_animations:combat/shield_hit_03",
+      "recruits_serious_animations:combat/shield_hit_04",
+      "recruits_serious_animations:combat/shield_hit_05",
+      "recruits_serious_animations:combat/shield_hit_06"
+    ]
+  }
+}

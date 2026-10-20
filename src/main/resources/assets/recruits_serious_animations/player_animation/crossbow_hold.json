@@ -1,0 +1,26 @@
+{
+  "format_version": "1.8.0",
+  "animations": {
+    "crossbow_hold": {
+      "loop": true,
+      "animation_length": 1.0,
+      "bones": {
+        "rightArm": {
+          "rotation": { "vector": [-88, -18, 2] },
+          "position": { "vector": [-0.5, 0, -0.5] }
+        },
+        "leftArm": {
+          "rotation": { "vector": [-91, 31, -3] },
+          "position": { "vector": [0.5, 0, -0.5] }
+        },
+        "torso": {
+          "rotation": { "vector": [0, -3, 0] }
+        },
+        "rightItem": {
+          "rotation": { "vector": [0, -6, 0] },
+          "position": { "vector": [0, 0, -0.5] }
+        }
+      }
+    }
+  }
+}

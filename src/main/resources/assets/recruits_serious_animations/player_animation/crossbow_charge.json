@@ -1,0 +1,32 @@
+{
+  "format_version": "1.8.0",
+  "animations": {
+    "crossbow_charge": {
+      "loop": true,
+      "animation_length": 0.8,
+      "bones": {
+        "rightArm": {
+          "rotation": {
+            "0.0": { "vector": [-72, -25, 5] },
+            "0.8": { "vector": [-87, -16, 2] }
+          },
+          "position": { "vector": [-0.5, 0, -0.5] }
+        },
+        "leftArm": {
+          "rotation": {
+            "0.0": { "vector": [-80, 55, -8] },
+            "0.8": { "vector": [-91, 30, -3] }
+          },
+          "position": { "vector": [0.5, 0, -0.5] }
+        },
+        "torso": {
+          "rotation": { "vector": [0, -3, 0] }
+        },
+        "rightItem": {
+          "rotation": { "vector": [0, -6, 0] },
+          "position": { "vector": [0, 0, -0.5] }
+        }
+      }
+    }
+  }
+}

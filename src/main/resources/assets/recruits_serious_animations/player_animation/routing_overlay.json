@@ -1,0 +1,38 @@
+{
+  "format_version": "1.8.0",
+  "animations": {
+    "routing_overlay": {
+      "loop": true,
+      "animation_length": 0.8,
+      "bones": {
+        "head": {
+          "rotation": {
+            "0.0": {"vector": [3, -12, 0]},
+            "0.2": {"vector": [6, 10, 2], "easing": "easeInOutSine"},
+            "0.4": {"vector": [2, 18, -2], "easing": "easeInOutSine"},
+            "0.6": {"vector": [5, -8, 1], "easing": "easeInOutSine"},
+            "0.8": {"vector": [3, -12, 0], "easing": "easeInOutSine"}
+          }
+        },
+        "rightArm": {
+          "rotation": {
+            "0.0": {"vector": [18, 8, 8]},
+            "0.2": {"vector": [-48, -6, 18], "easing": "easeInOutSine"},
+            "0.4": {"vector": [26, 10, 6], "easing": "easeInOutSine"},
+            "0.6": {"vector": [-58, -4, 20], "easing": "easeInOutSine"},
+            "0.8": {"vector": [18, 8, 8], "easing": "easeInOutSine"}
+          }
+        },
+        "leftArm": {
+          "rotation": {
+            "0.0": {"vector": [-40, -8, -14]},
+            "0.2": {"vector": [20, 6, -5], "easing": "easeInOutSine"},
+            "0.4": {"vector": [-54, -10, -18], "easing": "easeInOutSine"},
+            "0.6": {"vector": [24, 8, -4], "easing": "easeInOutSine"},
+            "0.8": {"vector": [-40, -8, -14], "easing": "easeInOutSine"}
+          }
+        }
+      }
+    }
+  }
+}

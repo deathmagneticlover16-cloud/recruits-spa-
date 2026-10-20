@@ -1,0 +1,19 @@
+{
+  "format_version": "1.8.0",
+  "animations": {
+    "mounted_melee_ready": {
+      "loop": true,
+      "animation_length": 1.0,
+      "bones": {
+        "rightArm": {
+          "rotation": { "vector": [4, -10, 6] },
+          "position": { "vector": [0, 0, 0] }
+        },
+        "rightItem": {
+          "rotation": { "vector": [32, 0, 0] },
+          "position": { "vector": [0, 0, 0] }
+        }
+      }
+    }
+  }
+}
