@@ -47,6 +47,8 @@ Look directly at a Recruit and use the rank-specific preview commands:
 
 `test r1`, `test r2`, and `test r3` enter and hold their respective shield-wall rank poses. The matching `stop` command plays that rank's leave animation and then restores normal animation control. Shield-wall previews preserve the right-arm position authored in the animation while leaving its rotation under locomotion control.
 
+During these previews, shield items use the same base display transform as the Blockbench paper reference. The animation's `leftItem` position and rotation therefore determine the visible shield placement without Minecraft's shield-specific third-person offset being added afterward.
+
 These tools are client-side and do not change Recruit movement, AI, position, or yaw.
 
 ## License

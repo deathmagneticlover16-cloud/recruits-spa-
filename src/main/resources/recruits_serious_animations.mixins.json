@@ -1,0 +1,12 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.lastpagans.recruitsspa",
+  "compatibilityLevel": "JAVA_17",
+  "client": [
+    "ShieldItemTransformMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
