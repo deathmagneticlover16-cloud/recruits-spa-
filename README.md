@@ -43,7 +43,7 @@ Look directly at a Recruit and use the rank-specific preview commands:
 /recruitspa stop r2
 ```
 
-`test r1` enters and holds the first-rank shield-wall pose. `stop r1` plays its leave animation and then restores normal animation control. `test r2` enters and holds the second-rank pose; until a dedicated leave asset is supplied, `stop r2` clears it immediately. The `r3` command slot is reserved for the future third-rank animation set.
+`test r1` enters and holds the first-rank shield-wall pose. `stop r1` plays its leave animation and then restores normal animation control. `test r2` enters and holds the second-rank pose; until a dedicated leave asset is supplied, `stop r2` clears it immediately. The `r3` command slot is reserved for the future third-rank animation set. Shield-wall previews preserve the right-arm position authored in the animation while leaving its rotation under locomotion control.
 
 These tools are client-side and do not change Recruit movement, AI, position, or yaw.
 
