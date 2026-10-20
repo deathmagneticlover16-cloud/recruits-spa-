@@ -1,23 +1,55 @@
 package com.lastpagans.recruitsspa;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.HashMap;
+import java.util.Map;
 
-/** Client-local selection used only by the animation preview command. */
+/** Client-local animation requests used only by the preview commands. */
 final class ClientAnimationTestState {
-    private static final Set<Integer> ACTIVE_RECRUITS = new HashSet<>();
+    enum Preview {
+        R1_ENTER("shield_r1_enter", true),
+        R1_LEAVE("shield_r1_leave", false),
+        R2_ENTER("shield_r2_enter", true);
+
+        final String animationPath;
+        final boolean holdsFinalFrame;
+
+        Preview(String animationPath, boolean holdsFinalFrame) {
+            this.animationPath = animationPath;
+            this.holdsFinalFrame = holdsFinalFrame;
+        }
+    }
+
+    static final class Request {
+        final Preview preview;
+        final int sequence;
+
+        Request(Preview preview, int sequence) {
+            this.preview = preview;
+            this.sequence = sequence;
+        }
+    }
+
+    private static final Map<Integer, Request> REQUESTS = new HashMap<>();
+    private static int nextSequence = 1;
 
     private ClientAnimationTestState() {}
 
-    static synchronized void start(int entityId) {
-        ACTIVE_RECRUITS.add(entityId);
+    static synchronized void play(int entityId, Preview preview) {
+        REQUESTS.put(entityId, new Request(preview, nextSequence++));
     }
 
-    static synchronized void stop(int entityId) {
-        ACTIVE_RECRUITS.remove(entityId);
+    static synchronized void clear(int entityId) {
+        REQUESTS.remove(entityId);
     }
 
-    static synchronized boolean isActive(int entityId) {
-        return ACTIVE_RECRUITS.contains(entityId);
+    static synchronized void clear(int entityId, int expectedSequence) {
+        Request request = REQUESTS.get(entityId);
+        if (request != null && request.sequence == expectedSequence) {
+            REQUESTS.remove(entityId);
+        }
+    }
+
+    static synchronized Request get(int entityId) {
+        return REQUESTS.get(entityId);
     }
 }

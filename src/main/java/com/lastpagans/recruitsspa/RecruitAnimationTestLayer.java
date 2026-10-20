@@ -12,11 +12,9 @@ import net.minecraft.resources.ResourceLocation;
 
 /** Highest-priority, visual-only layer for targeted animation development. */
 final class RecruitAnimationTestLayer extends ModifierLayer<IAnimation> {
-    private static final ResourceLocation SHIELD_RANK_ONE =
-            new ResourceLocation(RecruitsSeriousAnimations.MOD_ID, "shield_rank_one");
-
     private final AbstractRecruitEntity recruit;
-    private boolean previewing;
+    private int activeSequence;
+    private ClientAnimationTestState.Preview activePreview;
 
     RecruitAnimationTestLayer(AbstractRecruitEntity recruit) {
         this.recruit = recruit;
@@ -29,18 +27,35 @@ final class RecruitAnimationTestLayer extends ModifierLayer<IAnimation> {
 
     @Override
     public void tick() {
-        boolean shouldPreview = ClientAnimationTestState.isActive(recruit.getId());
-        if (shouldPreview && !previewing) {
-            previewing = startPreview();
-        } else if (!shouldPreview && previewing) {
-            setAnimation(null);
-            previewing = false;
+        int entityId = recruit.getId();
+        ClientAnimationTestState.Request request = ClientAnimationTestState.get(entityId);
+
+        if (request != null && request.sequence != activeSequence) {
+            if (startPreview(request.preview)) {
+                activeSequence = request.sequence;
+                activePreview = request.preview;
+            }
+        } else if (request == null && activePreview != null) {
+            clearPreview();
         }
+
         super.tick();
+
+        IAnimation animation = getAnimation();
+        if (activePreview != null
+                && !activePreview.holdsFinalFrame
+                && (animation == null || !animation.isActive())) {
+            ClientAnimationTestState.clear(entityId, activeSequence);
+            clearPreview();
+        }
     }
 
-    private boolean startPreview() {
-        KeyframeAnimation data = PlayerAnimationRegistry.getAnimation(SHIELD_RANK_ONE);
+    private boolean startPreview(ClientAnimationTestState.Preview preview) {
+        ResourceLocation id = new ResourceLocation(
+                RecruitsSeriousAnimations.MOD_ID,
+                preview.animationPath
+        );
+        KeyframeAnimation data = PlayerAnimationRegistry.getAnimation(id);
         if (data == null) {
             return false;
         }
@@ -55,5 +70,11 @@ final class RecruitAnimationTestLayer extends ModifierLayer<IAnimation> {
             );
         }
         return true;
+    }
+
+    private void clearPreview() {
+        setAnimation(null);
+        activeSequence = 0;
+        activePreview = null;
     }
 }

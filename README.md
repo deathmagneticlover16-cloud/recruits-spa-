@@ -34,13 +34,18 @@ The dependency JARs in `libs/` are used only on the development classpath and ar
 
 ## Shield-wall animation preview
 
-Look directly at a Recruit and run:
+Look directly at a Recruit and use the rank-specific preview commands:
 
 ```text
-/recruitspa test
+/recruitspa test r1
+/recruitspa stop r1
+/recruitspa test r2
+/recruitspa stop r2
 ```
 
-The selected Recruit plays `shield_rank_one` and holds its final frame. Look at the same Recruit and run `/recruitspa stop` to clear the preview. This tool is client-side and does not change Recruit movement, AI, position, or yaw.
+`test r1` enters and holds the first-rank shield-wall pose. `stop r1` plays its leave animation and then restores normal animation control. `test r2` enters and holds the second-rank pose; until a dedicated leave asset is supplied, `stop r2` clears it immediately. The `r3` command slot is reserved for the future third-rank animation set.
+
+These tools are client-side and do not change Recruit movement, AI, position, or yaw.
 
 ## License
 

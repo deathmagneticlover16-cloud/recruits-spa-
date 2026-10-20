@@ -10,39 +10,56 @@ import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraftforge.client.event.RegisterClientCommandsEvent;
 
-/** Small client-only command surface for previewing the current test animation. */
+/** Client-only commands for previewing shield-wall rank animations. */
 final class ClientAnimationTestCommands {
     private ClientAnimationTestCommands() {}
 
     static void register(RegisterClientCommandsEvent event) {
         CommandDispatcher<CommandSourceStack> dispatcher = event.getDispatcher();
         dispatcher.register(Commands.literal("recruitspa")
-                .then(Commands.literal("test").executes(context -> setLookedAtRecruit(true)))
-                .then(Commands.literal("stop").executes(context -> setLookedAtRecruit(false))));
+                .then(Commands.literal("test")
+                        .then(Commands.literal("r1").executes(context -> playLookedAt(
+                                ClientAnimationTestState.Preview.R1_ENTER)))
+                        .then(Commands.literal("r2").executes(context -> playLookedAt(
+                                ClientAnimationTestState.Preview.R2_ENTER)))
+                        .then(Commands.literal("r3").executes(context -> 0)))
+                .then(Commands.literal("stop")
+                        .then(Commands.literal("r1").executes(context -> playLookedAt(
+                                ClientAnimationTestState.Preview.R1_LEAVE)))
+                        .then(Commands.literal("r2").executes(context -> clearLookedAt()))
+                        .then(Commands.literal("r3").executes(context -> 0))));
     }
 
-    private static int setLookedAtRecruit(boolean active) {
+    private static int playLookedAt(ClientAnimationTestState.Preview preview) {
+        AbstractRecruitEntity recruit = lookedAtRecruit();
+        if (recruit == null) {
+            return 0;
+        }
+        ClientAnimationTestState.play(recruit.getId(), preview);
+        return 1;
+    }
+
+    private static int clearLookedAt() {
+        AbstractRecruitEntity recruit = lookedAtRecruit();
+        if (recruit == null) {
+            return 0;
+        }
+        ClientAnimationTestState.clear(recruit.getId());
+        return 1;
+    }
+
+    private static AbstractRecruitEntity lookedAtRecruit() {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft == null) {
-            return 0;
+            return null;
         }
 
         HitResult hitResult = minecraft.hitResult;
         if (!(hitResult instanceof EntityHitResult entityHit)) {
-            return 0;
+            return null;
         }
 
         Entity entity = entityHit.getEntity();
-        if (!(entity instanceof AbstractRecruitEntity)) {
-            return 0;
-        }
-
-        int entityId = entity.getId();
-        if (active) {
-            ClientAnimationTestState.start(entityId);
-        } else {
-            ClientAnimationTestState.stop(entityId);
-        }
-        return 1;
+        return entity instanceof AbstractRecruitEntity recruit ? recruit : null;
     }
 }
