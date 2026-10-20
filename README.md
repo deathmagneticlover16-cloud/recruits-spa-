@@ -45,3 +45,7 @@ The selected Recruit plays `shield_rank_one` and holds its final frame. Look at 
 ## License
 
 This project is available under the [MIT License](LICENSE).
+
+## Versioning
+
+Releases follow [Semantic Versioning](https://semver.org/): patch releases contain compatible fixes, minor releases add compatible functionality, and major releases may include breaking changes.

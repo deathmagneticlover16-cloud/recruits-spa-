@@ -9,7 +9,7 @@ displayName="${mod_name}"
 authors="${mod_authors}"
 description='''
 Serious Player Animations / combat animation bridge for Villager Recruits.
-V0.8.4 emergency compatibility build. Rebuilds spear throwing from SPA's real trident recipe (charged trident pose + render-only body turn + SPA release swing) and preserves Betsy Ross standard-bearing arm poses by bypassing all normal Recruits SPA arm transforms while standards are held.
+Includes bounded combat animations, stable locomotion, execution support, a spear-throw API, Betsy Ross compatibility, and targeted animation preview commands.
 '''
 
 [[dependencies.recruits_serious_animations]]
