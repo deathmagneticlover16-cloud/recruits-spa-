@@ -1,14 +1,12 @@
 package com.lastpagans.recruitsspa;
 
 import com.talhanation.recruits.entities.AbstractRecruitEntity;
-import dev.kosmx.playerAnim.api.TransformType;
 import dev.kosmx.playerAnim.api.layered.IAnimation;
 import dev.kosmx.playerAnim.api.layered.KeyframeAnimationPlayer;
 import dev.kosmx.playerAnim.api.layered.ModifierLayer;
 import dev.kosmx.playerAnim.api.layered.modifier.AbstractFadeModifier;
 import dev.kosmx.playerAnim.core.data.KeyframeAnimation;
 import dev.kosmx.playerAnim.core.util.Ease;
-import dev.kosmx.playerAnim.core.util.Vec3f;
 import dev.kosmx.playerAnim.minecraftApi.PlayerAnimationRegistry;
 import net.minecraft.resources.ResourceLocation;
 
@@ -25,25 +23,6 @@ final class RecruitAnimationTestLayer extends ModifierLayer<IAnimation> {
     @Override
     public boolean isActive() {
         return true;
-    }
-
-    @Override
-    public Vec3f get3DTransform(String partName, TransformType type, float tickDelta, Vec3f value0) {
-        if (activePreview == null) {
-            return value0;
-        }
-
-        // Right-arm rotation is the one intentional pass-through so locomotion
-        // can continue to control it. Every other animated rotation/position
-        // starts from zero, preventing lower locomotion, action, and held-item
-        // layers from being added to the Blockbench-authored preview pose.
-        if (type == TransformType.ROTATION && "rightArm".equals(partName)) {
-            return value0;
-        }
-        if (type == TransformType.ROTATION || type == TransformType.POSITION) {
-            return super.get3DTransform(partName, type, tickDelta, new Vec3f(0.0F, 0.0F, 0.0F));
-        }
-        return super.get3DTransform(partName, type, tickDelta, value0);
     }
 
     @Override
