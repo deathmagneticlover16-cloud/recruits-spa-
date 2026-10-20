@@ -1,6 +1,7 @@
-package com.lastpagans.recruitsspa;
+package com.lastpagans.recruitsspa.mixin;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.lastpagans.recruitsspa.ClientAnimationTestState;
 import com.talhanation.recruits.entities.AbstractRecruitEntity;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.ItemInHandRenderer;
@@ -21,7 +22,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /** Makes previewed shields use the same base display transform as the paper reference item. */
 @Mixin(value = ItemInHandRenderer.class, priority = 900)
-abstract class ShieldItemTransformMixin {
+public abstract class ShieldItemTransformMixin {
     @Unique
     private static final ItemStack PAPER_REFERENCE = new ItemStack(Items.PAPER);
 
@@ -64,7 +65,7 @@ abstract class ShieldItemTransformMixin {
     ) {
         if (!(entity instanceof AbstractRecruitEntity recruit)
                 || !(stack.getItem() instanceof ShieldItem)
-                || ClientAnimationTestState.get(recruit.getId()) == null) {
+                || !ClientAnimationTestState.isPreviewing(recruit.getId())) {
             return;
         }
 
