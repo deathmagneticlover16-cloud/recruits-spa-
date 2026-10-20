@@ -1,11 +1,12 @@
 # Local mod dependencies
 
-Place the following Minecraft 1.20.1 Forge mod JARs in this directory before building or running the development client:
+The repository currently includes these Minecraft 1.20.1 Forge dependencies:
 
 - Villager Recruits 1.15.2
-- Serious Player Animations 1.1.1
 - Player Animator 1.0.2-rc1+1.20
 - Mob Player Animator 1.3.3
+
+Add Serious Player Animations 1.1.1 before running the development client. It is a required runtime dependency, although this addon's Java sources do not compile directly against it.
 
 Optional integrations can also be placed here:
 
