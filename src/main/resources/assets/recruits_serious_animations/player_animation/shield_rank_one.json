@@ -6,6 +6,10 @@
       "animation_length": 0.75,
       "bones": {
         "torso": {
+          "rotation": {
+            "0.0": {"vector": [0, 0, 0]},
+            "0.75": {"vector": [0, 0, 0]}
+          },
           "position": {
             "0.0": {"vector": [0, 0, 0]},
             "0.25": {"vector": [0, -1, 0], "easing": "linear"},
@@ -14,6 +18,10 @@
           }
         },
         "head": {
+          "rotation": {
+            "0.0": {"vector": [0, 0, 0]},
+            "0.75": {"vector": [0, 0, 0]}
+          },
           "position": {
             "0.0": {"vector": [0, 0, 0]},
             "0.25": {"vector": [0, -1, 0]},
@@ -22,6 +30,10 @@
           }
         },
         "rightArm": {
+          "rotation": {
+            "0.0": {"vector": [0, 0, 0]},
+            "0.75": {"vector": [0, 0, 0]}
+          },
           "position": {
             "0.0": {"vector": [0, 0, 0]},
             "0.25": {"vector": [0, -1, 0], "easing": "linear"},
@@ -43,10 +55,15 @@
           }
         },
         "rightLeg": {
+          "rotation": {
+            "0.0": {"vector": [0, 0, 0]},
+            "0.75": {"vector": [0, 0, 0]}
+          },
           "position": {
             "0.0": {"vector": [0, 0, 0]},
             "0.25": {"vector": [0, 0, -3]},
-            "0.5": {"vector": [0, 0, -4]}
+            "0.5": {"vector": [0, 0, -4]},
+            "0.75": {"vector": [0, 0, -4]}
           }
         },
         "leftLeg": {
