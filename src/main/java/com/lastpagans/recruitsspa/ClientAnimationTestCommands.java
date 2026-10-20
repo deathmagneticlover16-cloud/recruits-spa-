@@ -30,7 +30,7 @@ final class ClientAnimationTestCommands {
                         .then(Commands.literal("r2").executes(context -> playLookedAt(
                                 ClientAnimationTestState.Preview.R2_LEAVE)))
                         .then(Commands.literal("r3").executes(context -> playLookedAt(
-                                ClientAnimationTestState.Preview.R3_LEAVE))));
+                                ClientAnimationTestState.Preview.R3_LEAVE)))));
     }
 
     private static int playLookedAt(ClientAnimationTestState.Preview preview) {
