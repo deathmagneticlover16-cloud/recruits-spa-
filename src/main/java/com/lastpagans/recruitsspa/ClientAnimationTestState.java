@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /** Client-local animation requests used only by the preview commands. */
-public final class ClientAnimationTestState {
+final class ClientAnimationTestState {
     enum Preview {
         R1_ENTER("shield_r1_enter", true),
         R1_LEAVE("shield_r1_leave", false),
@@ -56,7 +56,4 @@ public final class ClientAnimationTestState {
         return REQUESTS.get(entityId);
     }
 
-    public static synchronized boolean isPreviewing(int entityId) {
-        return REQUESTS.containsKey(entityId);
-    }
 }
