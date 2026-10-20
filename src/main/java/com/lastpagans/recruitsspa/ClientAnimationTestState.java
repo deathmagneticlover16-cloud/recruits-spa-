@@ -8,7 +8,10 @@ final class ClientAnimationTestState {
     enum Preview {
         R1_ENTER("shield_r1_enter", true),
         R1_LEAVE("shield_r1_leave", false),
-        R2_ENTER("shield_r2_enter", true);
+        R2_ENTER("shield_r2_enter", true),
+        R2_LEAVE("shield_r2_leave", false),
+        R3_ENTER("shield_r3_enter", true),
+        R3_LEAVE("shield_r3_leave", false);
 
         final String animationPath;
         final boolean holdsFinalFrame;

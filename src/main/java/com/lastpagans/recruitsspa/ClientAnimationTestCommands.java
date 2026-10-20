@@ -22,12 +22,15 @@ final class ClientAnimationTestCommands {
                                 ClientAnimationTestState.Preview.R1_ENTER)))
                         .then(Commands.literal("r2").executes(context -> playLookedAt(
                                 ClientAnimationTestState.Preview.R2_ENTER)))
-                        .then(Commands.literal("r3").executes(context -> 0)))
+                        .then(Commands.literal("r3").executes(context -> playLookedAt(
+                                ClientAnimationTestState.Preview.R3_ENTER))))
                 .then(Commands.literal("stop")
                         .then(Commands.literal("r1").executes(context -> playLookedAt(
                                 ClientAnimationTestState.Preview.R1_LEAVE)))
-                        .then(Commands.literal("r2").executes(context -> clearLookedAt()))
-                        .then(Commands.literal("r3").executes(context -> 0))));
+                        .then(Commands.literal("r2").executes(context -> playLookedAt(
+                                ClientAnimationTestState.Preview.R2_LEAVE)))
+                        .then(Commands.literal("r3").executes(context -> playLookedAt(
+                                ClientAnimationTestState.Preview.R3_LEAVE))));
     }
 
     private static int playLookedAt(ClientAnimationTestState.Preview preview) {
@@ -36,15 +39,6 @@ final class ClientAnimationTestCommands {
             return 0;
         }
         ClientAnimationTestState.play(recruit.getId(), preview);
-        return 1;
-    }
-
-    private static int clearLookedAt() {
-        AbstractRecruitEntity recruit = lookedAtRecruit();
-        if (recruit == null) {
-            return 0;
-        }
-        ClientAnimationTestState.clear(recruit.getId());
         return 1;
     }
 
