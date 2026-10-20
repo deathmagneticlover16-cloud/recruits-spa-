@@ -36,7 +36,7 @@ final class CombatSounds {
 
     static {
         for (String key : KEYS) {
-            SOUNDS.register(key, () -> SoundEvent.m_262824_(
+            SOUNDS.register(key, () -> SoundEvent.createVariableRangeEvent(
                     new ResourceLocation(RecruitsSeriousAnimations.MOD_ID, key)
             ));
         }

@@ -86,7 +86,7 @@ final class RecruitActionLayer extends ModifierLayer<IAnimation> {
         // target-facing code, so v0.3.4 reproduces only the *rendered* torso twist.
         // The arm rotations remain Recruits' vanilla target-aware BOW_AND_ARROW
         // rotations; only the shoulder pivots follow the turned chest.
-        float handSign = recruit.m_7655_() == InteractionHand.OFF_HAND ? 1.0F : -1.0F;
+        float handSign = recruit.getUsedItemHand() == InteractionHand.OFF_HAND ? 1.0F : -1.0F;
         float twist = handSign * BOW_TORSO_TWIST * smoothstep(blend);
 
         if (type == TransformType.ROTATION && "torso".equals(partName)) {
@@ -125,10 +125,10 @@ final class RecruitActionLayer extends ModifierLayer<IAnimation> {
     }
 
     private boolean isActivelyDrawingBow() {
-        if (!recruit.m_6117_()) {
+        if (!recruit.isUsingItem()) {
             return false;
         }
-        ItemStack active = recruit.m_21211_();
+        ItemStack active = recruit.getUseItem();
         return "BOW".equals(useAnimationName(active));
     }
 
@@ -144,7 +144,7 @@ final class RecruitActionLayer extends ModifierLayer<IAnimation> {
             oneShot = false;
             mirrorModifier.setEnabled(false);
             ensureLoop(Action.NONE);
-            lastSwinging = recruit.f_20911_;
+            lastSwinging = recruit.swinging;
             super.tick();
             return;
         }
@@ -155,7 +155,7 @@ final class RecruitActionLayer extends ModifierLayer<IAnimation> {
             bowBlend = Math.max(bowTarget, bowBlend - BOW_BLEND_PER_TICK);
         }
 
-        boolean swinging = recruit.f_20911_;
+        boolean swinging = recruit.swinging;
         boolean swingStarted = swinging && !lastSwinging;
         lastSwinging = swinging;
 
@@ -182,13 +182,13 @@ final class RecruitActionLayer extends ModifierLayer<IAnimation> {
     }
 
     private Action detectUseAction() {
-        if (!recruit.m_6117_()) {
+        if (!recruit.isUsingItem()) {
             return Action.NONE;
         }
 
-        ItemStack active = recruit.m_21211_();
+        ItemStack active = recruit.getUseItem();
         String use = useAnimationName(active);
-        boolean left = recruit.m_7655_() == InteractionHand.OFF_HAND;
+        boolean left = recruit.getUsedItemHand() == InteractionHand.OFF_HAND;
         mirrorModifier.setEnabled(left);
 
         // Recruits keeps control of the target-aware bow arm rotations. A render-only
@@ -213,15 +213,15 @@ final class RecruitActionLayer extends ModifierLayer<IAnimation> {
 
         // Crossbowmen keep a ready pose only while they actually have a target.
         // This avoids making them aim their crossbow while casually travelling.
-        ItemStack main = recruit.m_21205_();
-        if (recruit.m_5448_() != null && "CROSSBOW".equals(useAnimationName(main))) {
+        ItemStack main = recruit.getMainHandItem();
+        if (recruit.getTarget() != null && "CROSSBOW".equals(useAnimationName(main))) {
             return Action.CROSSBOW_HOLD;
         }
 
         // Mounted melee recruits should not inherit SPA's raised reins/arm pose
         // while engaging a target. Give the weapon hand a low combat-ready carry
         // instead. Better Mob Combat still overrides this during the actual hit.
-        if (recruit.m_5448_() != null && recruit.m_20159_() && isHorseLike(recruit.m_20202_())) {
+        if (recruit.getTarget() != null && recruit.isPassenger() && isHorseLike(recruit.getVehicle())) {
             String use = useAnimationName(main);
             if (!"BOW".equals(use)
                     && !"CROSSBOW".equals(use)
@@ -238,8 +238,8 @@ final class RecruitActionLayer extends ModifierLayer<IAnimation> {
         if (BetsyRossCompat.isHoldingStandard(recruit)) {
             return false;
         }
-        ItemStack main = recruit.m_21205_();
-        if (main == null || main.m_41619_()) {
+        ItemStack main = recruit.getMainHandItem();
+        if (main == null || main.isEmpty()) {
             return false;
         }
 
@@ -300,10 +300,10 @@ final class RecruitActionLayer extends ModifierLayer<IAnimation> {
     }
 
     private static String useAnimationName(ItemStack stack) {
-        if (stack == null || stack.m_41619_()) {
+        if (stack == null || stack.isEmpty()) {
             return "NONE";
         }
-        UseAnim anim = stack.m_41780_();
+        UseAnim anim = stack.getUseAnimation();
         return anim == null ? "NONE" : anim.name();
     }
 

@@ -48,12 +48,11 @@ repositories {
 dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
 
-    // This project integrates mods that do not publish a stable Maven API.
-    // Every JAR placed in libs/ is deobfuscated and added to the development
-    // classpath. The finished addon JAR does not bundle these dependencies.
-    fileTree(dir: 'libs', include: ['*.jar']).each { dependencyFile ->
-        implementation fg.deobf(files(dependencyFile))
-    }
+    // Flat-directory module declarations are required for ForgeGradle to
+    // deobfuscate local mod JARs into the development mappings.
+    implementation fg.deobf('local:recruits-1.20.1:1.15.2')
+    implementation fg.deobf('local:player-animation-lib-forge:1.0.2-rc1+1.20')
+    implementation fg.deobf('local:mobplayeranimator-forge-1.20.1:1.3.3-all')
 }
 
 tasks.named('processResources', ProcessResources).configure {

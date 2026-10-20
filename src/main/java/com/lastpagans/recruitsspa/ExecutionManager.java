@@ -45,11 +45,11 @@ public final class ExecutionManager {
         if (!(target instanceof AbstractRecruitEntity victim)) {
             return;
         }
-        if (victim.m_20193_() == null || victim.m_20193_().m_5776_()) {
+        if (victim.level() == null || victim.level().isClientSide()) {
             return;
         }
 
-        int victimId = victim.m_19879_();
+        int victimId = victim.getId();
         if (byEntityId.containsKey(victimId)) {
             event.setCanceled(true);
             return;
@@ -59,18 +59,18 @@ public final class ExecutionManager {
         if (source == null) {
             return;
         }
-        Entity causing = source.m_7639_();
+        Entity causing = source.getEntity();
         if (!(causing instanceof AbstractRecruitEntity attacker) || attacker == victim) {
             return;
         }
 
-        int attackerId = attacker.m_19879_();
+        int attackerId = attacker.getId();
         if (byEntityId.containsKey(attackerId)) {
             event.setCanceled(true);
             return;
         }
 
-        if (event.getAmount() + 0.0001F < victim.m_21223_()) {
+        if (event.getAmount() + 0.0001F < victim.getHealth()) {
             return;
         }
 
@@ -105,10 +105,10 @@ public final class ExecutionManager {
     }
 
     private void start(AbstractRecruitEntity attacker, AbstractRecruitEntity victim, DamageSource source, ExecutionSpec spec) {
-        Vec3 a = attacker.m_20182_();
-        Vec3 v = victim.m_20182_();
-        double dx = v.f_82479_ - a.f_82479_;
-        double dz = v.f_82481_ - a.f_82481_;
+        Vec3 a = attacker.position();
+        Vec3 v = victim.position();
+        double dx = v.x - a.x;
+        double dz = v.z - a.z;
         double horizontal = Math.sqrt(dx * dx + dz * dz);
         if (horizontal < 0.001D) {
             return;
@@ -116,8 +116,8 @@ public final class ExecutionManager {
 
         double ux = dx / horizontal;
         double uz = dz / horizontal;
-        double midX = (a.f_82479_ + v.f_82479_) * 0.5D;
-        double midZ = (a.f_82481_ + v.f_82481_) * 0.5D;
+        double midX = (a.x + v.x) * 0.5D;
+        double midZ = (a.z + v.z) * 0.5D;
         double half = spec.matchDistance * 0.5D;
 
         double attackerX = midX - ux * half;
@@ -134,10 +134,10 @@ public final class ExecutionManager {
                 source,
                 spec,
                 attackerX,
-                a.f_82480_,
+                a.y,
                 attackerZ,
                 victimX,
-                v.f_82480_,
+                v.y,
                 victimZ,
                 attackerYaw,
                 victimYaw,
@@ -146,30 +146,30 @@ public final class ExecutionManager {
         );
 
         sessions.add(session);
-        byEntityId.put(attacker.m_19879_(), session);
-        byEntityId.put(victim.m_19879_(), session);
+        byEntityId.put(attacker.getId(), session);
+        byEntityId.put(victim.getId(), session);
 
         session.lockBoth();
-        send(attacker.m_19879_(), victim.m_19879_(), ExecutionSyncMessage.START, spec.type);
+        send(attacker.getId(), victim.getId(), ExecutionSyncMessage.START, spec.type);
     }
 
     private ExecutionSpec chooseExecution(AbstractRecruitEntity attacker, AbstractRecruitEntity victim) {
-        WeaponKind attackerWeapon = weaponKind(attacker.m_21205_());
-        WeaponKind victimWeapon = weaponKind(victim.m_21205_());
+        WeaponKind attackerWeapon = weaponKind(attacker.getMainHandItem());
+        WeaponKind victimWeapon = weaponKind(victim.getMainHandItem());
 
         if (attackerWeapon == WeaponKind.SWORD && victimWeapon == WeaponKind.SWORD) {
             // V0.6 testing weights: enough long/matched encounters to be visible in battle
             // footage, while quick finishes still remain the majority. Reroll once when
             // the same attacker would immediately repeat the same execution.
             ExecutionSpec picked = randomSwordExecution();
-            Integer last = lastSwordExecutionByAttacker.get(attacker.m_19879_());
+            Integer last = lastSwordExecutionByAttacker.get(attacker.getId());
             if (last != null && last == picked.type) {
                 ExecutionSpec reroll = randomSwordExecution();
                 if (reroll.type != last) {
                     picked = reroll;
                 }
             }
-            lastSwordExecutionByAttacker.put(attacker.m_19879_(), picked.type);
+            lastSwordExecutionByAttacker.put(attacker.getId(), picked.type);
             return picked;
         }
 
@@ -190,40 +190,40 @@ public final class ExecutionManager {
     }
 
     private boolean eligibleGeometry(AbstractRecruitEntity attacker, AbstractRecruitEntity victim, double maxStartDistance) {
-        if (attacker.m_20193_() != victim.m_20193_()) {
+        if (attacker.level() != victim.level()) {
             return false;
         }
-        if (attacker.m_20159_() || victim.m_20159_()) {
+        if (attacker.isPassenger() || victim.isPassenger()) {
             return false;
         }
-        if (!attacker.m_20096_() || !victim.m_20096_()) {
+        if (!attacker.onGround() || !victim.onGround()) {
             return false;
         }
-        if (attacker.m_20072_() || victim.m_20072_() || attacker.m_6069_() || victim.m_6069_()) {
+        if (attacker.isInWater() || victim.isInWater() || attacker.isFallFlying() || victim.isFallFlying()) {
             return false;
         }
-        if (attacker.m_21223_() <= 0.0F || victim.m_21223_() <= 0.0F) {
+        if (attacker.getHealth() <= 0.0F || victim.getHealth() <= 0.0F) {
             return false;
         }
 
-        Vec3 a = attacker.m_20182_();
-        Vec3 v = victim.m_20182_();
-        double dy = Math.abs(v.f_82480_ - a.f_82480_);
+        Vec3 a = attacker.position();
+        Vec3 v = victim.position();
+        double dy = Math.abs(v.y - a.y);
         if (dy > MAX_VERTICAL_GAP) {
             return false;
         }
-        double dx = v.f_82479_ - a.f_82479_;
-        double dz = v.f_82481_ - a.f_82481_;
+        double dx = v.x - a.x;
+        double dz = v.z - a.z;
         double horizontalSq = dx * dx + dz * dz;
         return horizontalSq >= 0.16D && horizontalSq <= maxStartDistance * maxStartDistance;
     }
 
     private static WeaponKind weaponKind(ItemStack stack) {
-        if (stack == null || stack.m_41619_()) {
+        if (stack == null || stack.isEmpty()) {
             return WeaponKind.OTHER;
         }
 
-        Item item = stack.m_41720_();
+        Item item = stack.getItem();
         if (item == null) {
             return WeaponKind.OTHER;
         }
@@ -232,7 +232,7 @@ public final class ExecutionManager {
             return WeaponKind.SWORD;
         }
 
-        String use = stack.m_41780_() == null ? "" : stack.m_41780_().name();
+        String use = stack.getUseAnimation() == null ? "" : stack.getUseAnimation().name();
         String name = item.getClass().getSimpleName().toLowerCase();
 
         if ("SPEAR".equals(use)
@@ -432,8 +432,8 @@ public final class ExecutionManager {
             this.victim = victim;
             this.source = source;
             this.spec = spec;
-            this.attackerId = attacker.m_19879_();
-            this.victimId = victim.m_19879_();
+            this.attackerId = attacker.getId();
+            this.victimId = victim.getId();
             this.attackerX = attackerX;
             this.attackerY = attackerY;
             this.attackerZ = attackerZ;
@@ -449,10 +449,10 @@ public final class ExecutionManager {
         boolean tick() {
             age++;
 
-            if (!attackerReleased && attacker.m_21223_() <= 0.0F) {
+            if (!attackerReleased && attacker.getHealth() <= 0.0F) {
                 return abort();
             }
-            if (!killed && victim.m_21223_() <= 0.0F) {
+            if (!killed && victim.getHealth() <= 0.0F) {
                 return abort();
             }
 
@@ -467,8 +467,8 @@ public final class ExecutionManager {
 
             if (!killed && age >= spec.killTick) {
                 killed = true;
-                victim.m_21153_(0.0F);
-                victim.m_6667_(source);
+                victim.setHealth(0.0F);
+                victim.die(source);
             }
 
             if (!attackerReleased && age >= spec.releaseAttackerTick) {
@@ -529,13 +529,13 @@ public final class ExecutionManager {
 
     private static void lock(AbstractRecruitEntity recruit, double x, double y, double z, float yaw) {
         try {
-            recruit.m_21573_().m_26573_();
+            recruit.getNavigation().stop();
         } catch (Throwable ignored) {
         }
-        recruit.m_20256_(new Vec3(0.0D, 0.0D, 0.0D));
-        recruit.m_6034_(x, y, z);
-        recruit.m_146922_(yaw);
-        recruit.f_20883_ = yaw;
-        recruit.f_20885_ = yaw;
+        recruit.setDeltaMovement(new Vec3(0.0D, 0.0D, 0.0D));
+        recruit.setPos(x, y, z);
+        recruit.setYRot(yaw);
+        recruit.yBodyRot = yaw;
+        recruit.yHeadRot = yaw;
     }
 }

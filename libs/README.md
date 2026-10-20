@@ -16,4 +16,4 @@ Optional integrations can also be placed here:
 - Betsy Ross 2.1.2
 - Recruits RTS Camera / Commander
 
-Gradle loads every `*.jar` in this directory onto the deobfuscated development classpath. These files are intentionally ignored by Git and are not bundled in the addon JAR.
+The three included compile dependencies are declared explicitly in `build.gradle` so ForgeGradle can deobfuscate them. Add any further runtime-only mods to the generated `run/mods/` directory when testing locally. Dependencies are not bundled in the addon JAR.

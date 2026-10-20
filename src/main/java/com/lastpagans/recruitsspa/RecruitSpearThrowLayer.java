@@ -114,16 +114,16 @@ final class RecruitSpearThrowLayer extends ModifierLayer<IAnimation> {
     public void tick() {
         previousTwistBlend = twistBlend;
 
-        int networkSequence = ClientSpearThrowState.sequence(recruit.m_19879_());
+        int networkSequence = ClientSpearThrowState.sequence(recruit.getId());
         if (networkSequence != 0 && networkSequence != lastNetworkSequence) {
             lastNetworkSequence = networkSequence;
-            start(recruit.m_7655_() == InteractionHand.OFF_HAND);
+            start(recruit.getUsedItemHand() == InteractionHand.OFF_HAND);
         }
 
-        ItemStack active = recruit.m_21211_();
-        boolean throwableUsing = recruit.m_6117_() && ThrowableWeaponDetector.isThrowable(active);
+        ItemStack active = recruit.getUseItem();
+        boolean throwableUsing = recruit.isUsingItem() && ThrowableWeaponDetector.isThrowable(active);
         if (throwableUsing && !lastThrowableUsing && !throwing) {
-            start(recruit.m_7655_() == InteractionHand.OFF_HAND);
+            start(recruit.getUsedItemHand() == InteractionHand.OFF_HAND);
         }
         lastThrowableUsing = throwableUsing;
 

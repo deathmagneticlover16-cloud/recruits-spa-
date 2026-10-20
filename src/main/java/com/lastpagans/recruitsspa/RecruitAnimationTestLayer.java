@@ -29,7 +29,7 @@ final class RecruitAnimationTestLayer extends ModifierLayer<IAnimation> {
 
     @Override
     public void tick() {
-        boolean shouldPreview = ClientAnimationTestState.isActive(recruit.m_19879_());
+        boolean shouldPreview = ClientAnimationTestState.isActive(recruit.getId());
         if (shouldPreview && !previewing) {
             previewing = startPreview();
         } else if (!shouldPreview && previewing) {

@@ -22,22 +22,22 @@ final class ClientAnimationTestCommands {
     }
 
     private static int setLookedAtRecruit(boolean active) {
-        Minecraft minecraft = Minecraft.m_91087_();
+        Minecraft minecraft = Minecraft.getInstance();
         if (minecraft == null) {
             return 0;
         }
 
-        HitResult hitResult = minecraft.f_91077_;
+        HitResult hitResult = minecraft.hitResult;
         if (!(hitResult instanceof EntityHitResult entityHit)) {
             return 0;
         }
 
-        Entity entity = entityHit.m_82443_();
+        Entity entity = entityHit.getEntity();
         if (!(entity instanceof AbstractRecruitEntity)) {
             return 0;
         }
 
-        int entityId = entity.m_19879_();
+        int entityId = entity.getId();
         if (active) {
             ClientAnimationTestState.start(entityId);
         } else {

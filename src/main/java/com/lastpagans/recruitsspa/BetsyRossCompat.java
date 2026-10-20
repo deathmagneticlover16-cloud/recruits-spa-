@@ -20,13 +20,13 @@ final class BetsyRossCompat {
     private BetsyRossCompat() {}
 
     static boolean isHoldingStandard(AbstractRecruitEntity recruit) {
-        return recruit != null && (isStandard(recruit.m_21205_()) || isStandard(recruit.m_21206_()));
+        return recruit != null && (isStandard(recruit.getMainHandItem()) || isStandard(recruit.getOffhandItem()));
     }
 
     static boolean isStandard(ItemStack stack) {
-        if (stack == null || stack.m_41619_()) return false;
+        if (stack == null || stack.isEmpty()) return false;
         try {
-            Item item = stack.m_41720_();
+            Item item = stack.getItem();
             if (item == null) return false;
             Class<?> type = item.getClass();
             while (type != null) {

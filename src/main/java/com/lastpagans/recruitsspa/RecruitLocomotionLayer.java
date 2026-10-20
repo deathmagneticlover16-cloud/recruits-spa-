@@ -90,14 +90,14 @@ final class RecruitLocomotionLayer extends ModifierLayer<IAnimation> {
     }
 
     private boolean isActivelyDrawingBow() {
-        if (!recruit.m_6117_()) {
+        if (!recruit.isUsingItem()) {
             return false;
         }
-        ItemStack active = recruit.m_21211_();
-        if (active == null || active.m_41619_()) {
+        ItemStack active = recruit.getUseItem();
+        if (active == null || active.isEmpty()) {
             return false;
         }
-        UseAnim useAnim = active.m_41780_();
+        UseAnim useAnim = active.getUseAnimation();
         return useAnim != null && "BOW".equals(useAnim.name());
     }
 
@@ -111,22 +111,22 @@ final class RecruitLocomotionLayer extends ModifierLayer<IAnimation> {
 
     @Override
     public void tick() {
-        Vec3 pos = recruit.m_20182_();
+        Vec3 pos = recruit.position();
         double instantSpeed = 0.0D;
         double verticalSpeed = 0.0D;
 
         if (haveLastPosition) {
-            double dx = pos.f_82479_ - lastX;
-            double dz = pos.f_82481_ - lastZ;
+            double dx = pos.x - lastX;
+            double dz = pos.z - lastZ;
             instantSpeed = Math.sqrt(dx * dx + dz * dz);
-            verticalSpeed = pos.f_82480_ - lastY;
+            verticalSpeed = pos.y - lastY;
         } else {
             haveLastPosition = true;
         }
 
-        lastX = pos.f_82479_;
-        lastY = pos.f_82480_;
-        lastZ = pos.f_82481_;
+        lastX = pos.x;
+        lastY = pos.y;
+        lastZ = pos.z;
 
         if (!haveSmoothedSpeed) {
             smoothedSpeed = instantSpeed;
@@ -146,9 +146,9 @@ final class RecruitLocomotionLayer extends ModifierLayer<IAnimation> {
     }
 
     private State chooseState(double instantSpeed, double filteredSpeed, double verticalSpeed) {
-        if (recruit.m_20159_()) {
+        if (recruit.isPassenger()) {
             runExitTicks = 0;
-            Entity vehicle = recruit.m_20202_();
+            Entity vehicle = recruit.getVehicle();
             if (isHorseLike(vehicle)) {
                 return (instantSpeed > MOUNT_MOVE_EPSILON || filteredSpeed > MOUNT_MOVE_EPSILON)
                         ? State.HORSE_RUN : State.HORSE_IDLE;
@@ -157,18 +157,18 @@ final class RecruitLocomotionLayer extends ModifierLayer<IAnimation> {
             return State.PASSENGER;
         }
 
-        if (recruit.m_6069_()) {
+        if (recruit.isFallFlying()) {
             runExitTicks = 0;
             return State.SWIM;
         }
 
-        if (recruit.m_20072_()) {
+        if (recruit.isInWater()) {
             runExitTicks = 0;
             return (instantSpeed > WATER_MOVE_EPSILON || filteredSpeed > WATER_MOVE_EPSILON)
                     ? State.WATER_MOVE : State.WATER_IDLE;
         }
 
-        if (!recruit.m_20096_() && verticalSpeed < FALL_SPEED_THRESHOLD) {
+        if (!recruit.onGround() && verticalSpeed < FALL_SPEED_THRESHOLD) {
             runExitTicks = 0;
             return State.FALL;
         }

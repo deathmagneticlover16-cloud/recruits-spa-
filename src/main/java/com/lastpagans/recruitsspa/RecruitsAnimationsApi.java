@@ -17,10 +17,10 @@ public final class RecruitsAnimationsApi {
     /** Start the recruit's one-shot spear/pilum throw animation on clients. */
     public static void playSpearThrow(AbstractRecruitEntity recruit) {
         if (recruit == null) return;
-        SpearThrowServerState.start(recruit.m_19879_(), SPEAR_THROW_DURATION_TICKS);
+        SpearThrowServerState.start(recruit.getId(), SPEAR_THROW_DURATION_TICKS);
         RecruitsSeriousAnimations.EXECUTION_CHANNEL.send(
                 PacketDistributor.ALL.noArg(),
-                new SpearThrowSyncMessage(recruit.m_19879_())
+                new SpearThrowSyncMessage(recruit.getId())
         );
     }
 
@@ -32,6 +32,6 @@ public final class RecruitsAnimationsApi {
 
     /** Server-side activity query. Intended for Commander movement-hold logic. */
     public static boolean isSpearThrowActive(AbstractRecruitEntity recruit) {
-        return recruit != null && SpearThrowServerState.isActive(recruit.m_19879_());
+        return recruit != null && SpearThrowServerState.isActive(recruit.getId());
     }
 }

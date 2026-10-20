@@ -23,13 +23,13 @@ final class ThrowableWeaponDetector {
     private ThrowableWeaponDetector() {}
 
     static boolean isThrowable(ItemStack stack) {
-        if (stack == null || stack.m_41619_()) {
+        if (stack == null || stack.isEmpty()) {
             return false;
         }
         if (isTagged(stack, TAG_NAMESPACE, TAG_PATH)) {
             return true;
         }
-        Object item = stack.m_41720_();
+        Object item = stack.getItem();
         if (item == null) {
             return false;
         }

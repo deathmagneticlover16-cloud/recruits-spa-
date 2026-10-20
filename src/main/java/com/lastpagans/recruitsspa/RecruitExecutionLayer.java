@@ -39,7 +39,7 @@ final class RecruitExecutionLayer extends ModifierLayer<IAnimation> {
 
     @Override
     public void tick() {
-        ClientExecutionState.State state = ClientExecutionState.get(recruit.m_19879_());
+        ClientExecutionState.State state = ClientExecutionState.get(recruit.getId());
 
         if (state != null) {
             if (!executing || state.sequence != lastSequence) {

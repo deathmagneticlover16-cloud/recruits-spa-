@@ -15,13 +15,13 @@ final class ClientExecutionAudio {
 
     static void play(int entityId, String key, float volume, float pitchVariance) {
         try {
-            Minecraft minecraft = Minecraft.m_91087_();
-            ClientLevel level = minecraft == null ? null : minecraft.f_91073_;
+            Minecraft minecraft = Minecraft.getInstance();
+            ClientLevel level = minecraft == null ? null : minecraft.level;
             if (level == null) {
                 return;
             }
 
-            Entity entity = level.m_6815_(entityId);
+            Entity entity = level.getEntity(entityId);
             if (entity == null) {
                 return;
             }
@@ -33,17 +33,17 @@ final class ClientExecutionAudio {
             // IncompatibleClassChangeError as soon as the first execution cue played.
             // SoundEvent's variable-range factory is the same path Better Combat 1.8.6
             // uses for dynamically-addressed sounds and is safe for local playback.
-            SoundEvent sound = SoundEvent.m_262824_(id);
+            SoundEvent sound = SoundEvent.createVariableRangeEvent(id);
 
             float pitch = 1.0F;
             if (pitchVariance > 0.0F) {
                 pitch += (float) ThreadLocalRandom.current().nextDouble(-pitchVariance, pitchVariance);
             }
 
-            level.m_7785_(
-                    entity.m_20185_(),
-                    entity.m_20186_(),
-                    entity.m_20189_(),
+            level.playLocalSound(
+                    entity.getX(),
+                    entity.getY(),
+                    entity.getZ(),
                     sound,
                     SoundSource.PLAYERS,
                     volume,
