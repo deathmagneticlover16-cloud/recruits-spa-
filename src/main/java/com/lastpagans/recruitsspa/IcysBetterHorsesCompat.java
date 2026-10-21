@@ -1,11 +1,13 @@
 package com.lastpagans.recruitsspa;
 
+import com.talhanation.recruits.RecruitEvents;
 import com.talhanation.recruits.config.RecruitsServerConfig;
 import com.talhanation.recruits.entities.AbstractRecruitEntity;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.animal.horse.AbstractHorse;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.common.ToolActions;
 import net.minecraftforge.event.TickEvent;
@@ -20,6 +22,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
@@ -36,6 +39,8 @@ final class IcysBetterHorsesCompat {
             "icys-better-horses:icelandic_horse", "icys-better-horses:horse_cart"
     );
     private static final Map<UUID, Long> LAST_TRAMPLE = new HashMap<>();
+    private static final Map<UUID, ChargeWarmup> CHARGE_WARMUPS = new HashMap<>();
+    private static final int CHARGE_WARMUP_TICKS = 3 * 20;
     private static final Set<AbstractRecruitEntity> MOUNTED_BLOCKERS = new HashSet<>();
     private static Method horseDataOf;
     private static Method chargeStrike;
@@ -97,20 +102,24 @@ final class IcysBetterHorsesCompat {
     }
 
     private static void trample(ServerLevel level, AbstractRecruitEntity recruit) {
-        if (!(recruit.getVehicle() instanceof AbstractHorse horse) || !resolveReflection() || !combatEnabled()) {
+        if (!(recruit.getVehicle() instanceof AbstractHorse horse)) {
             return;
         }
+        long now = level.getGameTime();
         double horizontalSpeed = horse.getDeltaMovement().horizontalDistance();
         if (horizontalSpeed < 0.22D || !horse.onGround()) {
+            CHARGE_WARMUPS.remove(horse.getUUID());
+            return;
+        }
+        if (!chargeIsReady(horse, now) || !resolveReflection() || !combatEnabled()) {
             return;
         }
 
-        long now = level.getGameTime();
         var direction = horse.getDeltaMovement().multiply(1.0D, 0.0D, 1.0D).normalize();
         var hitbox = horse.getBoundingBox().inflate(0.3D).move(direction.scale(0.5D));
         for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, hitbox)) {
             if (target == horse || target == recruit || horse.hasPassenger(target)
-                    || target.isAlliedTo(recruit) || recruit.isAlliedTo(target) || !mayTarget(target)) {
+                    || isFriendly(recruit, target) || !mayTarget(target)) {
                 continue;
             }
             long last = LAST_TRAMPLE.getOrDefault(target.getUUID(), Long.MIN_VALUE / 2);
@@ -127,7 +136,44 @@ final class IcysBetterHorsesCompat {
         }
         if ((now & 255L) == 0L) {
             LAST_TRAMPLE.entrySet().removeIf(entry -> now - entry.getValue() > 200L);
+            CHARGE_WARMUPS.entrySet().removeIf(entry -> now - entry.getValue().lastMovingTick > 200L);
         }
+    }
+
+    private static boolean chargeIsReady(AbstractHorse horse, long now) {
+        ChargeWarmup warmup = CHARGE_WARMUPS.get(horse.getUUID());
+        if (warmup == null || warmup.lastMovingTick != now - 1L) {
+            warmup = new ChargeWarmup();
+            CHARGE_WARMUPS.put(horse.getUUID(), warmup);
+        }
+        warmup.lastMovingTick = now;
+        return ++warmup.movingTicks >= CHARGE_WARMUP_TICKS;
+    }
+
+    private static boolean isFriendly(AbstractRecruitEntity rider, LivingEntity collisionTarget) {
+        LivingEntity affiliation = collisionTarget;
+        if (collisionTarget instanceof AbstractHorse targetHorse) {
+            affiliation = targetHorse.getPassengers().stream()
+                    .filter(passenger -> passenger instanceof AbstractRecruitEntity || passenger instanceof Player)
+                    .map(LivingEntity.class::cast)
+                    .findFirst()
+                    .orElse(collisionTarget);
+        }
+
+        if (affiliation instanceof Player player && Objects.equals(rider.getOwnerUUID(), player.getUUID())) {
+            return true;
+        }
+        if (affiliation instanceof AbstractRecruitEntity other
+                && Objects.equals(rider.getOwnerUUID(), other.getOwnerUUID())) {
+            return true;
+        }
+        return affiliation.isAlliedTo(rider) || rider.isAlliedTo(affiliation)
+                || !RecruitEvents.canHarmTeam(rider, affiliation);
+    }
+
+    private static final class ChargeWarmup {
+        private int movingTicks;
+        private long lastMovingTick;
     }
 
     private static synchronized boolean resolveReflection() {
