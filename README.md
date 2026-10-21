@@ -31,7 +31,9 @@ optional integrations.
   as a player rider after maintaining forward movement for three seconds. Owners,
   same-owner Recruits, same-team units, and diplomatically allied units are
   excluded from collision damage so cavalry formations do not trample their
-  own mounts. Unowned Recruits remain valid charge targets.
+  own mounts. Unowned Recruits remain valid charge targets. Successful Recruit
+  cavalry impacts broadcast Icy's charge thud at the collision for nearby
+  players.
 - On server start, all Icy horse breeds and the horse cart are appended to
   Recruits' `MountWhitelist` if Icy's Better Horses is installed.
 

@@ -3,7 +3,10 @@ package com.lastpagans.recruitsspa;
 import com.talhanation.recruits.RecruitEvents;
 import com.talhanation.recruits.config.RecruitsServerConfig;
 import com.talhanation.recruits.entities.AbstractRecruitEntity;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.animal.horse.AbstractHorse;
@@ -29,6 +32,8 @@ import java.util.UUID;
 
 /** Common-side optional integration. No Icy classes are linked directly. */
 final class IcysBetterHorsesCompat {
+    private static final ResourceLocation CHARGE_THUD =
+            new ResourceLocation("icys-better-horses", "horse_charge_thud");
     private static final List<String> ICYS_MOUNTS = List.of(
             "icys-better-horses:morgan_horse", "icys-better-horses:arabian_horse",
             "icys-better-horses:quarter_horse", "icys-better-horses:mustang_horse",
@@ -119,6 +124,7 @@ final class IcysBetterHorsesCompat {
 
         var direction = horse.getDeltaMovement().multiply(1.0D, 0.0D, 1.0D).normalize();
         var hitbox = horse.getBoundingBox().inflate(0.3D).move(direction.scale(0.5D));
+        boolean broadcastImpactSound = true;
         for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, hitbox)) {
             if (target == horse || target == recruit || horse.hasPassenger(target)
                     || isFriendly(recruit, target)
@@ -133,6 +139,10 @@ final class IcysBetterHorsesCompat {
                 Object horseData = horseDataOf.invoke(null, horse);
                 chargeStrike.invoke(null, level, horse, horseData, target);
                 LAST_TRAMPLE.put(target.getUUID(), now);
+                if (broadcastImpactSound) {
+                    playChargeThud(level, horse);
+                    broadcastImpactSound = false;
+                }
             } catch (ReflectiveOperationException | RuntimeException ignored) {
                 return;
             }
@@ -141,6 +151,12 @@ final class IcysBetterHorsesCompat {
             LAST_TRAMPLE.entrySet().removeIf(entry -> now - entry.getValue() > 200L);
             CHARGE_WARMUPS.entrySet().removeIf(entry -> now - entry.getValue().lastMovingTick > 200L);
         }
+    }
+
+    private static void playChargeThud(ServerLevel level, AbstractHorse horse) {
+        BuiltInRegistries.SOUND_EVENT.getOptional(CHARGE_THUD).ifPresent(sound ->
+                level.playSound(null, horse.getX(), horse.getY(), horse.getZ(), sound,
+                        SoundSource.NEUTRAL, 1.5F, 0.95F + horse.getRandom().nextFloat() * 0.1F));
     }
 
     private static boolean chargeIsReady(AbstractHorse horse, long now) {
