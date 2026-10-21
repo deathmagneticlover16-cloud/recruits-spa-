@@ -9,6 +9,7 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.animal.horse.AbstractHorse;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.scores.Team;
 import net.minecraftforge.common.ToolActions;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.living.LivingEvent;
@@ -169,8 +170,12 @@ final class IcysBetterHorsesCompat {
                 && Objects.equals(riderOwner, other.getOwnerUUID())) {
             return true;
         }
-        return affiliation.isAlliedTo(rider) || rider.isAlliedTo(affiliation)
-                || !RecruitEvents.canHarmTeam(rider, affiliation);
+        if (affiliation.isAlliedTo(rider) || rider.isAlliedTo(affiliation)) {
+            return true;
+        }
+        Team riderTeam = rider.getTeam();
+        Team targetTeam = affiliation.getTeam();
+        return riderTeam != null && targetTeam != null && RecruitEvents.isAlly(riderTeam, targetTeam);
     }
 
     private static final class ChargeWarmup {
