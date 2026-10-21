@@ -42,6 +42,7 @@ final class IcysBetterHorsesCompat {
     private static final Map<UUID, Long> LAST_TRAMPLE = new HashMap<>();
     private static final Map<UUID, ChargeWarmup> CHARGE_WARMUPS = new HashMap<>();
     private static final int CHARGE_WARMUP_TICKS = 3 * 20;
+    private static final double MOVEMENT_WARMUP_SPEED = 0.06D;
     private static final Set<AbstractRecruitEntity> MOUNTED_BLOCKERS = new HashSet<>();
     private static Method horseDataOf;
     private static Method chargeStrike;
@@ -108,7 +109,7 @@ final class IcysBetterHorsesCompat {
         }
         long now = level.getGameTime();
         double horizontalSpeed = horse.getDeltaMovement().horizontalDistance();
-        if (horizontalSpeed < 0.22D || !horse.onGround()) {
+        if (horizontalSpeed < MOVEMENT_WARMUP_SPEED || !horse.onGround()) {
             CHARGE_WARMUPS.remove(horse.getUUID());
             return;
         }
@@ -120,7 +121,8 @@ final class IcysBetterHorsesCompat {
         var hitbox = horse.getBoundingBox().inflate(0.3D).move(direction.scale(0.5D));
         for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, hitbox)) {
             if (target == horse || target == recruit || horse.hasPassenger(target)
-                    || isFriendly(recruit, target) || !mayTarget(target)) {
+                    || isFriendly(recruit, target)
+                    || (!(target instanceof AbstractRecruitEntity) && !mayTarget(target))) {
                 continue;
             }
             long last = LAST_TRAMPLE.getOrDefault(target.getUUID(), Long.MIN_VALUE / 2);
@@ -162,6 +164,9 @@ final class IcysBetterHorsesCompat {
         }
 
         UUID riderOwner = rider.getOwnerUUID();
+        if (affiliation instanceof AbstractRecruitEntity other && other.getOwnerUUID() == null) {
+            return false;
+        }
         if (riderOwner != null && affiliation instanceof Player player
                 && Objects.equals(riderOwner, player.getUUID())) {
             return true;

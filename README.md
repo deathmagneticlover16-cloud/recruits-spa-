@@ -28,10 +28,10 @@ optional integrations.
   seat height to Icy's humanoid rider anchor, including the additional model
   origin correction required by Mob Player Animator's Recruit model.
 - A Recruit riding an Icy-managed horse gets the same gallop collision strike
-  as a player rider after maintaining charge speed for three seconds. Owners,
+  as a player rider after maintaining forward movement for three seconds. Owners,
   same-owner Recruits, same-team units, and diplomatically allied units are
   excluded from collision damage so cavalry formations do not trample their
-  own mounts.
+  own mounts. Unowned Recruits remain valid charge targets.
 - On server start, all Icy horse breeds and the horse cart are appended to
   Recruits' `MountWhitelist` if Icy's Better Horses is installed.
 
