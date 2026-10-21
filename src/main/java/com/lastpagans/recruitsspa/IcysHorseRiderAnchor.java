@@ -6,20 +6,21 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 
 /** Matches Icy's player seat drop for Recruit-sized humanoids. */
 final class IcysHorseRiderAnchor {
+    /*
+     * Icy already subtracts its 0.6-block humanoid seat drop from the entity
+     * position. Mob Player Animator's Recruit model origin still renders above
+     * that seat, so it needs this additional model-space correction.
+     */
+    private static final double RECRUIT_MODEL_SEAT_DROP = 0.45D;
+
     @SubscribeEvent
     public void beforeRender(RenderLivingEvent.Pre<?, ?> event) {
         if (!(event.getEntity() instanceof AbstractRecruitEntity recruit)
                 || !EntityCompat.isIcysHorse(recruit.getVehicle())) {
             return;
         }
-        double genericDrop = recruit.getMyRidingOffset() < 0.0D
-                ? 0.25D - recruit.getMyRidingOffset()
-                : recruit.getMyRidingOffset() == 0.0D && recruit.getBbHeight() >= 1.2F
-                ? recruit.getBbHeight() / 3.0D
-                : 0.0D;
-        double correction = Math.max(0.0D, genericDrop - 0.6D);
         event.getPoseStack().pushPose();
-        event.getPoseStack().translate(0.0D, -correction, 0.0D);
+        event.getPoseStack().translate(0.0D, -RECRUIT_MODEL_SEAT_DROP, 0.0D);
     }
 
     @SubscribeEvent

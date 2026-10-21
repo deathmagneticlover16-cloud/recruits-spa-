@@ -25,7 +25,8 @@ optional integrations.
 - Mounted Recruits keep full movement speed while blocking with a shield.
 - Icy's Better Horses gait, stop, jump, and turning motion drives the rider.
   The addon suppresses its own duplicate mounted bob and corrects the Recruit
-  seat height to Icy's humanoid rider anchor.
+  seat height to Icy's humanoid rider anchor, including the additional model
+  origin correction required by Mob Player Animator's Recruit model.
 - A Recruit riding an Icy-managed horse gets the same gallop collision strike
   as a player rider. Formation-aware charge orders still belong in an RTS/AI
   addon; this module supplies the general horse/recruit behavior.
