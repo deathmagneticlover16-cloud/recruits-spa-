@@ -160,11 +160,13 @@ final class IcysBetterHorsesCompat {
                     .orElse(collisionTarget);
         }
 
-        if (affiliation instanceof Player player && Objects.equals(rider.getOwnerUUID(), player.getUUID())) {
+        UUID riderOwner = rider.getOwnerUUID();
+        if (riderOwner != null && affiliation instanceof Player player
+                && Objects.equals(riderOwner, player.getUUID())) {
             return true;
         }
-        if (affiliation instanceof AbstractRecruitEntity other
-                && Objects.equals(rider.getOwnerUUID(), other.getOwnerUUID())) {
+        if (riderOwner != null && affiliation instanceof AbstractRecruitEntity other
+                && Objects.equals(riderOwner, other.getOwnerUUID())) {
             return true;
         }
         return affiliation.isAlliedTo(rider) || rider.isAlliedTo(affiliation)
