@@ -12,6 +12,7 @@ public final class ClientBootstrap {
     public static void init() {
         MobAnimationAccess.REGISTER_ANIMATION_EVENT.register(ClientBootstrap::registerRecruitAnimations);
         MinecraftForge.EVENT_BUS.addListener(ClientAnimationTestCommands::register);
+        MinecraftForge.EVENT_BUS.register(new IcysHorseRiderAnchor());
     }
 
     private static void registerRecruitAnimations(Mob mob, AnimationStack stack) {

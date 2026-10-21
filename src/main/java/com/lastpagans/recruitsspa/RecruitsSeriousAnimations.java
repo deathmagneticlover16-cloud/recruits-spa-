@@ -23,6 +23,7 @@ public final class RecruitsSeriousAnimations {
 
         MinecraftForge.EVENT_BUS.register(ExecutionManager.INSTANCE);
         MinecraftForge.EVENT_BUS.register(SpearThrowServerState.INSTANCE);
+        MinecraftForge.EVENT_BUS.register(new IcysBetterHorsesCompat());
 
         // Keep all Player Animator / Mob Player Animator references out of the
         // dedicated-server class path. ClientBootstrap is loaded only on a client.

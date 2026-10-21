@@ -2,9 +2,7 @@ package com.lastpagans.recruitsspa;
 
 import com.talhanation.recruits.entities.AbstractRecruitEntity;
 import dev.kosmx.playerAnim.api.TransformType;
-import dev.kosmx.playerAnim.api.layered.IAnimation;
 import dev.kosmx.playerAnim.api.layered.KeyframeAnimationPlayer;
-import dev.kosmx.playerAnim.api.layered.ModifierLayer;
 import dev.kosmx.playerAnim.api.layered.modifier.AbstractFadeModifier;
 import dev.kosmx.playerAnim.api.layered.modifier.SpeedModifier;
 import dev.kosmx.playerAnim.core.data.KeyframeAnimation;
@@ -23,7 +21,7 @@ import net.minecraft.world.phys.Vec3;
  * V0.3 keeps the proven 0.1.3 walk/run hysteresis and adds swimming, falling,
  * horse riding, and a blank passenger state for non-horse vehicles.
  */
-final class RecruitLocomotionLayer extends ModifierLayer<IAnimation> {
+final class RecruitLocomotionLayer extends LodAwareModifierLayer {
     private static final ResourceLocation IDLE_ANIM = spa("idle_standing");
     private static final ResourceLocation WALK_ANIM = spa("walking");
     private static final ResourceLocation RUN_ANIM = spa("running");
@@ -57,7 +55,7 @@ final class RecruitLocomotionLayer extends ModifierLayer<IAnimation> {
     private int runExitTicks;
 
     RecruitLocomotionLayer(AbstractRecruitEntity recruit) {
-        super();
+        super(recruit);
         this.recruit = recruit;
         this.speedModifier = new SpeedModifier(1.0F);
         addModifierLast(this.speedModifier);
@@ -150,6 +148,12 @@ final class RecruitLocomotionLayer extends ModifierLayer<IAnimation> {
             runExitTicks = 0;
             Entity vehicle = recruit.getVehicle();
             if (isHorseLike(vehicle)) {
+                // Icy animates the horse and applies its full gait/turn/jump motion
+                // to every rider at render time. Keep a stable riding pose here so
+                // our old running bob does not double those authored movements.
+                if (EntityCompat.isIcysHorse(vehicle)) {
+                    return State.HORSE_IDLE;
+                }
                 return (instantSpeed > MOUNT_MOVE_EPSILON || filteredSpeed > MOUNT_MOVE_EPSILON)
                         ? State.HORSE_RUN : State.HORSE_IDLE;
             }
@@ -232,11 +236,7 @@ final class RecruitLocomotionLayer extends ModifierLayer<IAnimation> {
     }
 
     private static boolean isHorseLike(Entity vehicle) {
-        if (vehicle == null) {
-            return false;
-        }
-        String name = vehicle.getClass().getSimpleName();
-        return name.contains("Horse") || name.contains("Donkey") || name.contains("Mule");
+        return EntityCompat.isHorseLike(vehicle);
     }
 
     private static ResourceLocation spa(String path) {

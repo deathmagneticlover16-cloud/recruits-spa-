@@ -4,7 +4,6 @@ import com.talhanation.recruits.entities.AbstractRecruitEntity;
 import dev.kosmx.playerAnim.api.TransformType;
 import dev.kosmx.playerAnim.api.layered.IAnimation;
 import dev.kosmx.playerAnim.api.layered.KeyframeAnimationPlayer;
-import dev.kosmx.playerAnim.api.layered.ModifierLayer;
 import dev.kosmx.playerAnim.api.layered.modifier.AbstractFadeModifier;
 import dev.kosmx.playerAnim.api.layered.modifier.MirrorModifier;
 import dev.kosmx.playerAnim.api.layered.modifier.SpeedModifier;
@@ -23,7 +22,7 @@ import net.minecraft.world.item.UseAnim;
  * Most SPA action files intentionally omit the legs, so the locomotion layer can
  * continue underneath sword swings, bow aiming, shield blocking and eating.
  */
-final class RecruitActionLayer extends ModifierLayer<IAnimation> {
+final class RecruitActionLayer extends LodAwareModifierLayer {
     private static final float BOW_TORSO_TWIST = (float) Math.toRadians(55.0D);
     private static final float BOW_BLEND_PER_TICK = 0.22F;
     private static final ResourceLocation BLANK = spa("blank_loop");
@@ -52,7 +51,7 @@ final class RecruitActionLayer extends ModifierLayer<IAnimation> {
     private float previousBowBlend;
 
     RecruitActionLayer(AbstractRecruitEntity recruit) {
-        super();
+        super(recruit);
         this.recruit = recruit;
         this.mirrorModifier = new MirrorModifier(false);
         this.speedModifier = new SpeedModifier(1.0F);
@@ -308,11 +307,7 @@ final class RecruitActionLayer extends ModifierLayer<IAnimation> {
     }
 
     private static boolean isHorseLike(net.minecraft.world.entity.Entity vehicle) {
-        if (vehicle == null) {
-            return false;
-        }
-        String name = vehicle.getClass().getSimpleName();
-        return name.contains("Horse") || name.contains("Donkey") || name.contains("Mule");
+        return EntityCompat.isHorseLike(vehicle);
     }
 
     private static ResourceLocation spa(String path) {

@@ -61,3 +61,24 @@ versionRange="[1,)"
 ordering="AFTER"
 side="CLIENT"
 
+[[dependencies.recruits_serious_animations]]
+modId="icys_better_horses"
+mandatory=false
+versionRange="[2.1.4,)"
+ordering="AFTER"
+side="BOTH"
+
+[[dependencies.recruits_serious_animations]]
+modId="entity_model_features"
+mandatory=false
+versionRange="[3.3.12,)"
+ordering="AFTER"
+side="CLIENT"
+
+[[dependencies.recruits_serious_animations]]
+modId="entity_texture_features"
+mandatory=false
+versionRange="[7.2.6,)"
+ordering="AFTER"
+side="CLIENT"
+

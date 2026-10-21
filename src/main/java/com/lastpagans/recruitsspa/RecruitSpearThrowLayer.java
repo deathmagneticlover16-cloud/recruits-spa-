@@ -2,9 +2,7 @@ package com.lastpagans.recruitsspa;
 
 import com.talhanation.recruits.entities.AbstractRecruitEntity;
 import dev.kosmx.playerAnim.api.TransformType;
-import dev.kosmx.playerAnim.api.layered.IAnimation;
 import dev.kosmx.playerAnim.api.layered.KeyframeAnimationPlayer;
-import dev.kosmx.playerAnim.api.layered.ModifierLayer;
 import dev.kosmx.playerAnim.api.layered.modifier.AbstractFadeModifier;
 import dev.kosmx.playerAnim.api.layered.modifier.MirrorModifier;
 import dev.kosmx.playerAnim.api.layered.modifier.SpeedModifier;
@@ -32,7 +30,7 @@ import net.minecraft.world.item.ItemStack;
  *
  * No entity position, navigation, velocity or yaw is changed here.
  */
-final class RecruitSpearThrowLayer extends ModifierLayer<IAnimation> {
+final class RecruitSpearThrowLayer extends LodAwareModifierLayer {
     private static final ResourceLocation SPA_TRIDENT =
             new ResourceLocation("seriousplayeranimations", "trident");
     private static final ResourceLocation SPA_RELEASE =
@@ -60,6 +58,7 @@ final class RecruitSpearThrowLayer extends ModifierLayer<IAnimation> {
     private float previousTwistBlend;
 
     RecruitSpearThrowLayer(AbstractRecruitEntity recruit) {
+        super(recruit);
         this.recruit = recruit;
         this.mirrorModifier = new MirrorModifier(false);
         this.speedModifier = new SpeedModifier(1.0F);

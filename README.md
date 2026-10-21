@@ -12,7 +12,35 @@ A Minecraft Forge 1.20.1 animation compatibility addon for Villager Recruits. It
 - Player Animator 1.0.2-rc1+1.20
 - Mob Player Animator 1.3.3
 
-Better Combat 1.8.6 and Betsy Ross 2.1.2 are supported optional integrations.
+Better Combat 1.8.6, Betsy Ross 2.1.2, Icy's Better Horses 2.1.4,
+Entity Model Features 3.3.12, and Entity Texture Features 7.2.6 are supported
+optional integrations.
+
+## Mounted compatibility
+
+- The bundled Better Combat weapon attributes make the 26 supported Epic
+  Knights, Antique Legacy, Dark Ages Armory, and Slavic Armory spears use
+  `bettercombat:one_handed_stab_mounted` while mounted. Their existing foot
+  attacks and one-handed shield use are retained.
+- Mounted Recruits keep full movement speed while blocking with a shield.
+- Icy's Better Horses gait, stop, jump, and turning motion drives the rider.
+  The addon suppresses its own duplicate mounted bob and corrects the Recruit
+  seat height to Icy's humanoid rider anchor.
+- A Recruit riding an Icy-managed horse gets the same gallop collision strike
+  as a player rider. Formation-aware charge orders still belong in an RTS/AI
+  addon; this module supplies the general horse/recruit behavior.
+- On server start, all Icy horse breeds and the horse cart are appended to
+  Recruits' `MountWhitelist` if Icy's Better Horses is installed.
+
+## EMF/ETF performance compatibility
+
+When Entity Model Features is installed, Recruit Player Animator layers follow
+EMF's **Animation LOD Distance** setting. Distant Recruits evaluate their SPA
+poses less often using the same distance cadence while animation time continues
+normally, including EMF's
+**Retain Detail on Low FPS** preference. A value of `0` keeps full-quality
+updates at every distance. ETF remains fully optional and continues to manage
+texture features independently.
 
 ## Building
 

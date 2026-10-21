@@ -1,9 +1,7 @@
 package com.lastpagans.recruitsspa;
 
 import com.talhanation.recruits.entities.AbstractRecruitEntity;
-import dev.kosmx.playerAnim.api.layered.IAnimation;
 import dev.kosmx.playerAnim.api.layered.KeyframeAnimationPlayer;
-import dev.kosmx.playerAnim.api.layered.ModifierLayer;
 import dev.kosmx.playerAnim.api.layered.modifier.AbstractFadeModifier;
 import dev.kosmx.playerAnim.core.data.KeyframeAnimation;
 import dev.kosmx.playerAnim.core.util.Ease;
@@ -11,7 +9,7 @@ import dev.kosmx.playerAnim.minecraftApi.PlayerAnimationRegistry;
 import net.minecraft.resources.ResourceLocation;
 
 /** Full-body matched-combat override, deliberately above BMC's normal attack layer. */
-final class RecruitExecutionLayer extends ModifierLayer<IAnimation> {
+final class RecruitExecutionLayer extends LodAwareModifierLayer {
     private static final ResourceLocation SWORD_ATTACKER_FALLBACK = ours("execution_sword_attacker_01");
     private static final ResourceLocation SWORD_VICTIM_STAB = ours("execution_sword_victim_bmc_01");
     private static final ResourceLocation SWORD_VICTIM_SLASH = ours("execution_sword_victim_slash_02");
@@ -29,6 +27,7 @@ final class RecruitExecutionLayer extends ModifierLayer<IAnimation> {
     private boolean executing;
 
     RecruitExecutionLayer(AbstractRecruitEntity recruit) {
+        super(recruit);
         this.recruit = recruit;
     }
 
