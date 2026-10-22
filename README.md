@@ -23,6 +23,9 @@ optional integrations.
   `bettercombat:one_handed_stab_mounted` while mounted. Their existing foot
   attacks and one-handed shield use are retained.
 - Mounted Recruits keep full movement speed while blocking with a shield.
+- RTS mods can trigger the 2.25-second `TriumphVar1` mounted weapon wave through
+  `RecruitsAnimationsApi.playMountedTriumph(recruit)`. The API validates that
+  the Recruit is riding a horse and has a main-hand item before broadcasting it.
 - Icy's Better Horses gait, stop, jump, and turning motion drives the rider.
   The addon suppresses its own duplicate mounted bob and corrects the Recruit
   seat height to Icy's humanoid rider anchor, including the additional model

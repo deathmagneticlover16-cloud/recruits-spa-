@@ -20,9 +20,11 @@ public final class RecruitsSeriousAnimations {
         EXECUTION_CHANNEL = CommonRegistry.registerChannel(MOD_ID, "execution", 8);
         CommonRegistry.registerMessage(EXECUTION_CHANNEL, 0, ExecutionSyncMessage.class);
         CommonRegistry.registerMessage(EXECUTION_CHANNEL, 1, SpearThrowSyncMessage.class);
+        CommonRegistry.registerMessage(EXECUTION_CHANNEL, 2, MountedTriumphSyncMessage.class);
 
         MinecraftForge.EVENT_BUS.register(ExecutionManager.INSTANCE);
         MinecraftForge.EVENT_BUS.register(SpearThrowServerState.INSTANCE);
+        MinecraftForge.EVENT_BUS.register(MountedTriumphServerState.INSTANCE);
         MinecraftForge.EVENT_BUS.register(new IcysBetterHorsesCompat());
 
         // Keep all Player Animator / Mob Player Animator references out of the

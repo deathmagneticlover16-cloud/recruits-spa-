@@ -26,6 +26,7 @@ public final class ClientBootstrap {
         // Explicit/edge-triggered spear throw. It is completely inactive between throws
         // and cannot alter idle/movement.
         stack.addAnimLayer(3200, new RecruitSpearThrowLayer(recruit));
+        stack.addAnimLayer(3300, new RecruitMountedTriumphLayer(recruit));
         stack.addAnimLayer(3500, new RecruitRoutingLayer(recruit));
 
         // Matched-combat must win over Better Mob Combat's attack layer (2000)
