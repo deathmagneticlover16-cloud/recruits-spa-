@@ -46,10 +46,21 @@ final class IcysBetterHorsesCompat {
     );
     private static final Map<UUID, Long> LAST_TRAMPLE = new HashMap<>();
     private static final Map<UUID, ChargeWarmup> CHARGE_WARMUPS = new HashMap<>();
+    private static final Map<UUID, GaitTransition> GAIT_TRANSITIONS = new HashMap<>();
     private static final int CHARGE_WARMUP_TICKS = 3 * 20;
     private static final double MOVEMENT_WARMUP_SPEED = 0.06D;
+    private static final double GAIT_MOVEMENT_SPEED = 0.012D;
+    private static final double GAIT_RUN_SPEED = 0.16D;
+    private static final int TROT_TICKS = 10;
+    private static final int CANTER_TICKS = TROT_TICKS * 2;
+    private static final int GAIT_HALT = 0;
+    private static final int GAIT_WALK = 1;
+    private static final int GAIT_TROT = 2;
+    private static final int GAIT_CANTER = 3;
+    private static final int GAIT_GALLOP = 4;
     private static final Set<AbstractRecruitEntity> MOUNTED_BLOCKERS = new HashSet<>();
     private static Method horseDataOf;
+    private static Method setGaitGear;
     private static Method chargeStrike;
     private static Method mayTarget;
     private static Method horseCombatEnabled;
@@ -77,6 +88,7 @@ final class IcysBetterHorsesCompat {
             MOUNTED_BLOCKERS.add(recruit);
         }
         if (ModList.get().isLoaded("icys_better_horses") && recruit.level() instanceof ServerLevel level) {
+            updateRecruitHorseGait(level, recruit);
             trample(level, recruit);
         }
     }
@@ -156,7 +168,65 @@ final class IcysBetterHorsesCompat {
     private static void playChargeThud(ServerLevel level, AbstractHorse horse) {
         BuiltInRegistries.SOUND_EVENT.getOptional(CHARGE_THUD).ifPresent(sound ->
                 level.playSound(null, horse.getX(), horse.getY(), horse.getZ(), sound,
-                        SoundSource.NEUTRAL, 1.5F, 0.95F + horse.getRandom().nextFloat() * 0.1F));
+                        SoundSource.NEUTRAL, 0.375F, 0.95F + horse.getRandom().nextFloat() * 0.1F));
+    }
+
+    private static void updateRecruitHorseGait(ServerLevel level, AbstractRecruitEntity recruit) {
+        if (!(recruit.getVehicle() instanceof AbstractHorse horse) || !resolveReflection()) {
+            return;
+        }
+
+        long now = level.getGameTime();
+        double speed = horse.getDeltaMovement().horizontalDistance();
+        GaitTransition transition = GAIT_TRANSITIONS.computeIfAbsent(horse.getUUID(), ignored -> new GaitTransition());
+        if (transition.lastTick != 0L && transition.lastTick != now - 1L) {
+            transition.phase = GaitPhase.HALT;
+            transition.phaseTicks = 0;
+            transition.appliedGait = -1;
+        }
+        transition.lastTick = now;
+
+        int gait;
+        if (speed < GAIT_MOVEMENT_SPEED) {
+            transition.phase = GaitPhase.HALT;
+            transition.phaseTicks = 0;
+            gait = GAIT_HALT;
+        } else if (speed < GAIT_RUN_SPEED) {
+            transition.phase = GaitPhase.WALK;
+            transition.phaseTicks = 0;
+            gait = GAIT_WALK;
+        } else {
+            if (transition.phase == GaitPhase.HALT || transition.phase == GaitPhase.WALK) {
+                transition.phase = GaitPhase.TROT;
+                transition.phaseTicks = 0;
+            }
+            if (transition.phase == GaitPhase.TROT && ++transition.phaseTicks > TROT_TICKS) {
+                transition.phase = GaitPhase.CANTER;
+                transition.phaseTicks = 1;
+            } else if (transition.phase == GaitPhase.CANTER && ++transition.phaseTicks > CANTER_TICKS) {
+                transition.phase = GaitPhase.GALLOP;
+                transition.phaseTicks = 0;
+            }
+            gait = switch (transition.phase) {
+                case TROT -> GAIT_TROT;
+                case CANTER -> GAIT_CANTER;
+                default -> GAIT_GALLOP;
+            };
+        }
+
+        if (gait != transition.appliedGait) {
+            try {
+                Object horseData = horseDataOf.invoke(null, horse);
+                setGaitGear.invoke(horseData, gait);
+                transition.appliedGait = gait;
+            } catch (ReflectiveOperationException | RuntimeException ignored) {
+                GAIT_TRANSITIONS.remove(horse.getUUID());
+            }
+        }
+
+        if ((now & 255L) == 0L) {
+            GAIT_TRANSITIONS.entrySet().removeIf(entry -> now - entry.getValue().lastTick > 200L);
+        }
     }
 
     private static boolean chargeIsReady(AbstractHorse horse, long now) {
@@ -204,6 +274,21 @@ final class IcysBetterHorsesCompat {
         private long lastMovingTick;
     }
 
+    private static final class GaitTransition {
+        private GaitPhase phase = GaitPhase.HALT;
+        private int phaseTicks;
+        private int appliedGait = -1;
+        private long lastTick;
+    }
+
+    private enum GaitPhase {
+        HALT,
+        WALK,
+        TROT,
+        CANTER,
+        GALLOP
+    }
+
     private static synchronized boolean resolveReflection() {
         if (reflectionResolved) {
             return horseDataOf != null;
@@ -214,6 +299,7 @@ final class IcysBetterHorsesCompat {
             Class<?> horseCombat = Class.forName("icy.betterhorses.net.feature.HorseCombat");
             Class<?> config = Class.forName("icy.betterhorses.net.BhConfig");
             horseDataOf = horseData.getMethod("of", AbstractHorse.class);
+            setGaitGear = horseData.getMethod("bh_setGaitGear", int.class);
             chargeStrike = horseCombat.getMethod(
                     "chargeStrike", ServerLevel.class, AbstractHorse.class, horseData, LivingEntity.class
             );

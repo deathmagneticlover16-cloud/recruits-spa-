@@ -26,14 +26,16 @@ optional integrations.
 - Icy's Better Horses gait, stop, jump, and turning motion drives the rider.
   The addon suppresses its own duplicate mounted bob and corrects the Recruit
   seat height to Icy's humanoid rider anchor, including the additional model
-  origin correction required by Mob Player Animator's Recruit model.
+  origin correction required by Mob Player Animator's Recruit model. Recruit
+  horses use walk while walking and transition through a short trot and a
+  twice-as-long canter before reaching gallop while running.
 - A Recruit riding an Icy-managed horse gets the same gallop collision strike
   as a player rider after maintaining forward movement for three seconds. Owners,
   same-owner Recruits, same-team units, and diplomatically allied units are
   excluded from collision damage so cavalry formations do not trample their
   own mounts. Unowned Recruits remain valid charge targets. Successful Recruit
-  cavalry impacts broadcast Icy's charge thud at the collision for nearby
-  players.
+  cavalry impacts broadcast Icy's charge thud at 25% volume from the collision
+  for nearby players.
 - On server start, all Icy horse breeds and the horse cart are appended to
   Recruits' `MountWhitelist` if Icy's Better Horses is installed.
 
