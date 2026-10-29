@@ -21,7 +21,7 @@ public final class RecruitsAnimationsApi {
         if (recruit == null) return;
         SpearThrowServerState.start(recruit.getId(), SPEAR_THROW_DURATION_TICKS);
         RecruitsSeriousAnimations.EXECUTION_CHANNEL.send(
-                PacketDistributor.ALL.noArg(),
+                PacketDistributor.TRACKING_ENTITY.with(() -> recruit),
                 new SpearThrowSyncMessage(recruit.getId())
         );
     }
@@ -45,7 +45,7 @@ public final class RecruitsAnimationsApi {
         if (!canPlayMountedTriumph(recruit)) return false;
         MountedTriumphServerState.start(recruit.getId(), MOUNTED_TRIUMPH_DURATION_TICKS);
         RecruitsSeriousAnimations.EXECUTION_CHANNEL.send(
-                PacketDistributor.ALL.noArg(),
+                PacketDistributor.TRACKING_ENTITY.with(() -> recruit),
                 new MountedTriumphSyncMessage(recruit.getId())
         );
         return true;

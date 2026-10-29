@@ -17,6 +17,9 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.UseAnim;
 
+import java.util.IdentityHashMap;
+import java.util.Map;
+
 /**
  * Upper-body/action layer for Recruits.
  *
@@ -24,6 +27,7 @@ import net.minecraft.world.item.UseAnim;
  * continue underneath sword swings, bow aiming, shield blocking and eating.
  */
 final class RecruitActionLayer extends LodAwareModifierLayer {
+    private static final Map<net.minecraft.world.item.Item, Boolean> LANCE_ITEMS = new IdentityHashMap<>();
     private static final float BOW_TORSO_TWIST = (float) Math.toRadians(55.0D);
     private static final float BOW_BLEND_PER_TICK = 0.22F;
     private static final ResourceLocation BLANK = spa("blank_loop");
@@ -70,7 +74,7 @@ final class RecruitActionLayer extends LodAwareModifierLayer {
         // Emergency Betsy Ross compatibility: its HumanoidModel mixin already
         // positions both arms for flag/banner standards. Do not overwrite that
         // native pose from any of this layer's animations.
-        if (BetsyRossCompat.isHoldingStandard(recruit) && BetsyRossCompat.isArmPart(partName)) {
+        if (BetsyRossCompat.isArmPart(partName) && BetsyRossCompat.isHoldingStandard(recruit)) {
             return value0;
         }
 
@@ -234,8 +238,10 @@ final class RecruitActionLayer extends LodAwareModifierLayer {
         if (stack == null || stack.isEmpty()) {
             return false;
         }
-        ResourceLocation itemId = BuiltInRegistries.ITEM.getKey(stack.getItem());
-        return itemId != null && itemId.getPath().contains("lance");
+        return LANCE_ITEMS.computeIfAbsent(stack.getItem(), item -> {
+            ResourceLocation itemId = BuiltInRegistries.ITEM.getKey(item);
+            return itemId != null && itemId.getPath().contains("lance");
+        });
     }
 
     private boolean shouldPlayMeleeFallback() {

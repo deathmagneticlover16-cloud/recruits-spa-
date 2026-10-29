@@ -7,6 +7,14 @@ import net.minecraftforge.fml.ModList;
 
 final class EntityCompat {
     private static final String ICYS_NAMESPACE = "icys-better-horses";
+    private static final boolean ICYS_LOADED = ModList.get().isLoaded("icys_better_horses");
+    private static final ClassValue<Boolean> HORSE_LIKE_CLASSES = new ClassValue<>() {
+        @Override
+        protected Boolean computeValue(Class<?> type) {
+            String name = type.getSimpleName();
+            return name.contains("Horse") || name.contains("Donkey") || name.contains("Mule");
+        }
+    };
 
     private EntityCompat() {}
 
@@ -17,8 +25,7 @@ final class EntityCompat {
         if (vehicle instanceof AbstractHorse) {
             return true;
         }
-        String name = vehicle.getClass().getSimpleName();
-        return name.contains("Horse") || name.contains("Donkey") || name.contains("Mule");
+        return HORSE_LIKE_CLASSES.get(vehicle.getClass());
     }
 
     static boolean isIcysHorse(Entity vehicle) {
@@ -27,7 +34,7 @@ final class EntityCompat {
         }
         // Icy mixes its gait, seat and rider-motion systems into AbstractHorse,
         // so vanilla horses are managed too while the mod is present.
-        if (ModList.get().isLoaded("icys_better_horses")) {
+        if (ICYS_LOADED) {
             return true;
         }
         var id = BuiltInRegistries.ENTITY_TYPE.getKey(vehicle.getType());

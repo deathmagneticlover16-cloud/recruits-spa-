@@ -77,7 +77,7 @@ final class RecruitLocomotionLayer extends LodAwareModifierLayer {
         // the torso and legs underneath. No entity rotation is changed here.
         // Betsy Ross sets its own standard-bearing arm pose in HumanoidModel.
         // Preserve it exactly instead of letting SPA locomotion overwrite the arms.
-        if (BetsyRossCompat.isHoldingStandard(recruit) && BetsyRossCompat.isArmPart(partName)) {
+        if (BetsyRossCompat.isArmPart(partName) && BetsyRossCompat.isHoldingStandard(recruit)) {
             return value0;
         }
 

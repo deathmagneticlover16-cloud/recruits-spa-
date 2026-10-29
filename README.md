@@ -16,6 +16,12 @@ Better Combat 1.8.6, Betsy Ross 2.1.2, Icy's Better Horses 2.1.4,
 Entity Model Features 3.3.12, and Entity Texture Features 7.2.6 are supported
 optional integrations.
 
+Animation layers sleep while their one-shot actions are inactive, EMF LOD
+decisions and compatibility lookups are cached, and server animation packets
+are limited to players tracking the affected Recruit. Mounted collision scans
+are staggered across ticks to keep large cavalry formations from producing a
+single server-tick spike.
+
 ## Mounted compatibility
 
 - The bundled Better Combat weapon attributes make the supported Epic Knights,

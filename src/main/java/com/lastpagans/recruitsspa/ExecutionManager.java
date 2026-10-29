@@ -10,6 +10,7 @@ import net.minecraft.world.item.SwordItem;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.living.LivingDamageEvent;
+import net.minecraftforge.event.server.ServerStoppingEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.network.PacketDistributor;
@@ -17,8 +18,10 @@ import net.minecraftforge.network.PacketDistributor;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.WeakHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
@@ -32,10 +35,19 @@ public final class ExecutionManager {
     static final ExecutionManager INSTANCE = new ExecutionManager();
 
     private static final double MAX_VERTICAL_GAP = 0.75D;
+    private static final ClassValue<NoAiAccess> NO_AI_ACCESS = new ClassValue<>() {
+        @Override
+        protected NoAiAccess computeValue(Class<?> type) {
+            return new NoAiAccess(
+                    findMethod(type, new String[]{"m_21525_", "isNoAi"}),
+                    findMethod(type, new String[]{"m_21557_", "setNoAi"}, boolean.class)
+            );
+        }
+    };
 
     private final Map<Integer, ExecutionSession> byEntityId = new HashMap<>();
     private final List<ExecutionSession> sessions = new ArrayList<>();
-    private final Map<Integer, Integer> lastSwordExecutionByAttacker = new HashMap<>();
+    private final Map<AbstractRecruitEntity, Integer> lastSwordExecutionByAttacker = new WeakHashMap<>();
 
     private ExecutionManager() {}
 
@@ -89,19 +101,19 @@ public final class ExecutionManager {
             return;
         }
 
-        List<ExecutionSession> finished = null;
-        for (ExecutionSession session : new ArrayList<>(sessions)) {
-            if (session.tick()) {
-                if (finished == null) {
-                    finished = new ArrayList<>();
-                }
-                finished.add(session);
+        Iterator<ExecutionSession> iterator = sessions.iterator();
+        while (iterator.hasNext()) {
+            if (iterator.next().tick()) {
+                iterator.remove();
             }
         }
+    }
 
-        if (finished != null) {
-            sessions.removeAll(finished);
-        }
+    @SubscribeEvent
+    public void onServerStopping(ServerStoppingEvent event) {
+        sessions.clear();
+        byEntityId.clear();
+        lastSwordExecutionByAttacker.clear();
     }
 
     private void start(AbstractRecruitEntity attacker, AbstractRecruitEntity victim, DamageSource source, ExecutionSpec spec) {
@@ -150,7 +162,7 @@ public final class ExecutionManager {
         byEntityId.put(victim.getId(), session);
 
         session.lockBoth();
-        send(attacker.getId(), victim.getId(), ExecutionSyncMessage.START, spec.type);
+        send(attacker, attacker.getId(), victim.getId(), ExecutionSyncMessage.START, spec.type);
     }
 
     private ExecutionSpec chooseExecution(AbstractRecruitEntity attacker, AbstractRecruitEntity victim) {
@@ -162,14 +174,14 @@ public final class ExecutionManager {
             // footage, while quick finishes still remain the majority. Reroll once when
             // the same attacker would immediately repeat the same execution.
             ExecutionSpec picked = randomSwordExecution();
-            Integer last = lastSwordExecutionByAttacker.get(attacker.getId());
+            Integer last = lastSwordExecutionByAttacker.get(attacker);
             if (last != null && last == picked.type) {
                 ExecutionSpec reroll = randomSwordExecution();
                 if (reroll.type != last) {
                     picked = reroll;
                 }
             }
-            lastSwordExecutionByAttacker.put(attacker.getId(), picked.type);
+            lastSwordExecutionByAttacker.put(attacker, picked.type);
             return picked;
         }
 
@@ -263,43 +275,43 @@ public final class ExecutionManager {
         return value;
     }
 
-    private static void send(int attackerId, int victimId, int phase, int type) {
+    private static void send(AbstractRecruitEntity trackedRecruit, int attackerId, int victimId, int phase, int type) {
         RecruitsSeriousAnimations.EXECUTION_CHANNEL.send(
-                PacketDistributor.ALL.noArg(),
+                PacketDistributor.TRACKING_ENTITY.with(() -> trackedRecruit),
                 new ExecutionSyncMessage(attackerId, victimId, phase, type)
         );
     }
 
     private static boolean readNoAi(AbstractRecruitEntity recruit) {
-        Object value = invokeNoArg(recruit, "m_21525_", "isNoAi");
-        return value instanceof Boolean b && b;
+        Method getter = NO_AI_ACCESS.get(recruit.getClass()).getter;
+        if (getter == null) return false;
+        try {
+            return Boolean.TRUE.equals(getter.invoke(recruit));
+        } catch (ReflectiveOperationException ignored) {
+            return false;
+        }
     }
 
     private static void setNoAi(AbstractRecruitEntity recruit, boolean value) {
-        invokeBoolean(recruit, value, "m_21557_", "setNoAi");
+        Method setter = NO_AI_ACCESS.get(recruit.getClass()).setter;
+        if (setter == null) return;
+        try {
+            setter.invoke(recruit, value);
+        } catch (ReflectiveOperationException ignored) {
+        }
     }
 
-    private static Object invokeNoArg(Object object, String... names) {
+    private static Method findMethod(Class<?> type, String[] names, Class<?>... parameterTypes) {
         for (String name : names) {
             try {
-                Method method = object.getClass().getMethod(name);
-                return method.invoke(object);
+                return type.getMethod(name, parameterTypes);
             } catch (ReflectiveOperationException ignored) {
             }
         }
         return null;
     }
 
-    private static void invokeBoolean(Object object, boolean value, String... names) {
-        for (String name : names) {
-            try {
-                Method method = object.getClass().getMethod(name, boolean.class);
-                method.invoke(object, value);
-                return;
-            } catch (ReflectiveOperationException ignored) {
-            }
-        }
-    }
+    private record NoAiAccess(Method getter, Method setter) {}
 
     private enum WeaponKind {
         SWORD,
@@ -475,14 +487,14 @@ public final class ExecutionManager {
                 attackerReleased = true;
                 setNoAi(attacker, attackerNoAiBefore);
                 byEntityId.remove(attackerId);
-                send(attackerId, victimId, ExecutionSyncMessage.RELEASE_ATTACKER, spec.type);
+                send(attacker, attackerId, victimId, ExecutionSyncMessage.RELEASE_ATTACKER, spec.type);
             }
 
             if (age >= spec.endTick) {
                 setNoAi(victim, victimNoAiBefore);
                 byEntityId.remove(attackerId);
                 byEntityId.remove(victimId);
-                send(attackerId, victimId, ExecutionSyncMessage.END, spec.type);
+                send(attacker, attackerId, victimId, ExecutionSyncMessage.END, spec.type);
                 return true;
             }
 
@@ -492,21 +504,21 @@ public final class ExecutionManager {
         private void fireCues() {
             for (int clashTick : spec.clashTicks) {
                 if (age == clashTick) {
-                    send(attackerId, victimId, ExecutionSyncMessage.SFX_CLASH, spec.type);
+                    send(attacker, attackerId, victimId, ExecutionSyncMessage.SFX_CLASH, spec.type);
                     break;
                 }
             }
             if (age == spec.stabTick) {
-                send(attackerId, victimId, ExecutionSyncMessage.SFX_STAB, spec.type);
+                send(attacker, attackerId, victimId, ExecutionSyncMessage.SFX_STAB, spec.type);
             }
             if (age == spec.painTick) {
-                send(attackerId, victimId, ExecutionSyncMessage.SFX_PAIN, spec.type);
+                send(attacker, attackerId, victimId, ExecutionSyncMessage.SFX_PAIN, spec.type);
             }
             if (age == spec.deathTick) {
-                send(attackerId, victimId, ExecutionSyncMessage.SFX_DEATH, spec.type);
+                send(attacker, attackerId, victimId, ExecutionSyncMessage.SFX_DEATH, spec.type);
             }
             if (age == spec.bodyFallTick) {
-                send(attackerId, victimId, ExecutionSyncMessage.SFX_BODY_FALL, spec.type);
+                send(attacker, attackerId, victimId, ExecutionSyncMessage.SFX_BODY_FALL, spec.type);
             }
         }
 
@@ -522,7 +534,7 @@ public final class ExecutionManager {
             setNoAi(victim, victimNoAiBefore);
             byEntityId.remove(attackerId);
             byEntityId.remove(victimId);
-            send(attackerId, victimId, ExecutionSyncMessage.END, spec.type);
+            send(attacker, attackerId, victimId, ExecutionSyncMessage.END, spec.type);
             return true;
         }
     }
@@ -532,7 +544,7 @@ public final class ExecutionManager {
             recruit.getNavigation().stop();
         } catch (Throwable ignored) {
         }
-        recruit.setDeltaMovement(new Vec3(0.0D, 0.0D, 0.0D));
+        recruit.setDeltaMovement(Vec3.ZERO);
         recruit.setPos(x, y, z);
         recruit.setYRot(yaw);
         recruit.yBodyRot = yaw;

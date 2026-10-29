@@ -17,7 +17,6 @@ final class RecruitMountedTriumphLayer extends LodAwareModifierLayer {
             new ResourceLocation(RecruitsSeriousAnimations.MOD_ID, "mounted_triumph_var_1");
 
     private final AbstractRecruitEntity recruit;
-    private int lastSequence;
     private boolean playing;
 
     RecruitMountedTriumphLayer(AbstractRecruitEntity recruit) {
@@ -27,12 +26,12 @@ final class RecruitMountedTriumphLayer extends LodAwareModifierLayer {
 
     @Override
     public boolean isActive() {
-        return true;
+        return playing || ClientMountedTriumphState.hasPending(recruit.getId());
     }
 
     @Override
     public Vec3f get3DTransform(String partName, TransformType type, float tickDelta, Vec3f value0) {
-        if (BetsyRossCompat.isHoldingStandard(recruit) && BetsyRossCompat.isArmPart(partName)) {
+        if (BetsyRossCompat.isArmPart(partName) && BetsyRossCompat.isHoldingStandard(recruit)) {
             return value0;
         }
         return super.get3DTransform(partName, type, tickDelta, value0);
@@ -40,9 +39,8 @@ final class RecruitMountedTriumphLayer extends LodAwareModifierLayer {
 
     @Override
     public void tick() {
-        int sequence = ClientMountedTriumphState.sequence(recruit.getId());
-        if (sequence != 0 && sequence != lastSequence) {
-            lastSequence = sequence;
+        int sequence = ClientMountedTriumphState.consume(recruit.getId());
+        if (sequence != 0) {
             start();
         }
 

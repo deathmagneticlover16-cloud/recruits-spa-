@@ -1,7 +1,8 @@
 package com.lastpagans.recruitsspa;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /** Client-local animation requests used only by the preview commands. */
 final class ClientAnimationTestState {
@@ -32,27 +33,25 @@ final class ClientAnimationTestState {
         }
     }
 
-    private static final Map<Integer, Request> REQUESTS = new HashMap<>();
-    private static int nextSequence = 1;
+    private static final Map<Integer, Request> REQUESTS = new ConcurrentHashMap<>();
+    private static final AtomicInteger NEXT_SEQUENCE = new AtomicInteger(1);
 
     private ClientAnimationTestState() {}
 
-    static synchronized void play(int entityId, Preview preview) {
-        REQUESTS.put(entityId, new Request(preview, nextSequence++));
+    static void play(int entityId, Preview preview) {
+        REQUESTS.put(entityId, new Request(preview, NEXT_SEQUENCE.getAndIncrement()));
     }
 
-    static synchronized void clear(int entityId) {
+    static void clear(int entityId) {
         REQUESTS.remove(entityId);
     }
 
-    static synchronized void clear(int entityId, int expectedSequence) {
-        Request request = REQUESTS.get(entityId);
-        if (request != null && request.sequence == expectedSequence) {
-            REQUESTS.remove(entityId);
-        }
+    static void clear(int entityId, int expectedSequence) {
+        REQUESTS.computeIfPresent(entityId,
+                (ignored, request) -> request.sequence == expectedSequence ? null : request);
     }
 
-    static synchronized Request get(int entityId) {
+    static Request get(int entityId) {
         return REQUESTS.get(entityId);
     }
 

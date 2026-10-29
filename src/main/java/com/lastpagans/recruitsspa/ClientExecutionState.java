@@ -1,7 +1,8 @@
 package com.lastpagans.recruitsspa;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /** Client-side execution role/type table populated by ExecutionSyncMessage. */
 final class ClientExecutionState {
@@ -19,14 +20,14 @@ final class ClientExecutionState {
         }
     }
 
-    private static final Map<Integer, State> STATES = new HashMap<>();
-    private static int nextSequence = 1;
+    private static final Map<Integer, State> STATES = new ConcurrentHashMap<>();
+    private static final AtomicInteger NEXT_SEQUENCE = new AtomicInteger(1);
 
     private ClientExecutionState() {}
 
-    static synchronized void handle(int attackerId, int victimId, int phase, int executionType) {
+    static void handle(int attackerId, int victimId, int phase, int executionType) {
         if (phase == ExecutionSyncMessage.START) {
-            int sequence = nextSequence++;
+            int sequence = NEXT_SEQUENCE.getAndIncrement();
             STATES.put(attackerId, new State(Role.ATTACKER, sequence, executionType));
             STATES.put(victimId, new State(Role.VICTIM, sequence, executionType));
             return;
@@ -63,7 +64,11 @@ final class ClientExecutionState {
         }
     }
 
-    static synchronized State get(int entityId) {
+    static State get(int entityId) {
         return STATES.get(entityId);
+    }
+
+    static void clear(int entityId) {
+        STATES.remove(entityId);
     }
 }

@@ -1,11 +1,12 @@
 package com.lastpagans.recruitsspa;
 
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.Map;
 
 /**
@@ -16,7 +17,9 @@ import java.util.Map;
 final class ThrowableWeaponDetector {
     private static final String TAG_NAMESPACE = "recruits_rts_camera";
     private static final String TAG_PATH = "throwable_weapons";
-    private static final Map<String, Object> TAGS = new HashMap<>();
+    private static final Map<Item, Boolean> THROWABLE_ITEMS = new IdentityHashMap<>();
+    private static volatile boolean tagResolved;
+    private static Object throwableTag;
     private static volatile boolean itemStackMethodResolved;
     private static Method itemStackIsTag;
 
@@ -26,12 +29,16 @@ final class ThrowableWeaponDetector {
         if (stack == null || stack.isEmpty()) {
             return false;
         }
-        if (isTagged(stack, TAG_NAMESPACE, TAG_PATH)) {
-            return true;
-        }
-        Object item = stack.getItem();
+        Item item = stack.getItem();
         if (item == null) {
             return false;
+        }
+        return THROWABLE_ITEMS.computeIfAbsent(item, ignored -> classify(stack, item));
+    }
+
+    private static boolean classify(ItemStack stack, Item item) {
+        if (isTagged(stack)) {
+            return true;
         }
         String name = (item.getClass().getSimpleName() + " " + item).toLowerCase();
         return name.contains("antique_spear")
@@ -40,9 +47,9 @@ final class ThrowableWeaponDetector {
                 || name.contains("pilum");
     }
 
-    private static boolean isTagged(ItemStack stack, String namespace, String path) {
+    private static boolean isTagged(ItemStack stack) {
         try {
-            Object tag = tag(namespace, path);
+            Object tag = tag();
             Method method = itemStackTagMethod(tag);
             if (tag == null || method == null) {
                 return false;
@@ -54,35 +61,40 @@ final class ThrowableWeaponDetector {
         }
     }
 
-    private static synchronized Object tag(String namespace, String path) {
-        String key = namespace + ':' + path;
-        if (TAGS.containsKey(key)) {
-            return TAGS.get(key);
+    private static Object tag() {
+        if (tagResolved) {
+            return throwableTag;
         }
-        Object value = null;
-        try {
-            Class<?> itemTags = Class.forName("net.minecraft.tags.ItemTags", false,
-                    ThrowableWeaponDetector.class.getClassLoader());
-            ResourceLocation id = new ResourceLocation(namespace, path);
-            for (Method method : itemTags.getDeclaredMethods()) {
-                if (!Modifier.isStatic(method.getModifiers()) || method.getParameterCount() != 1) {
-                    continue;
-                }
-                if (method.getParameterTypes()[0] != ResourceLocation.class) {
-                    continue;
-                }
-                if (!"net.minecraft.tags.TagKey".equals(method.getReturnType().getName())) {
-                    continue;
-                }
-                method.setAccessible(true);
-                value = method.invoke(null, id);
-                break;
+        synchronized (ThrowableWeaponDetector.class) {
+            if (tagResolved) {
+                return throwableTag;
             }
-        } catch (Throwable ignored) {
-            value = null;
+            Object value = null;
+            try {
+                Class<?> itemTags = Class.forName("net.minecraft.tags.ItemTags", false,
+                        ThrowableWeaponDetector.class.getClassLoader());
+                ResourceLocation id = new ResourceLocation(TAG_NAMESPACE, TAG_PATH);
+                for (Method method : itemTags.getDeclaredMethods()) {
+                    if (!Modifier.isStatic(method.getModifiers()) || method.getParameterCount() != 1) {
+                        continue;
+                    }
+                    if (method.getParameterTypes()[0] != ResourceLocation.class) {
+                        continue;
+                    }
+                    if (!"net.minecraft.tags.TagKey".equals(method.getReturnType().getName())) {
+                        continue;
+                    }
+                    method.setAccessible(true);
+                    value = method.invoke(null, id);
+                    break;
+                }
+            } catch (Throwable ignored) {
+                value = null;
+            }
+            throwableTag = value;
+            tagResolved = true;
+            return throwableTag;
         }
-        TAGS.put(key, value);
-        return value;
     }
 
     private static Method itemStackTagMethod(Object tag) {

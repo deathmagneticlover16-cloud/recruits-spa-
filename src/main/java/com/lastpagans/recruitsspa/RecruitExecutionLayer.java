@@ -20,7 +20,6 @@ final class RecruitExecutionLayer extends LodAwareModifierLayer {
     private static final ResourceLocation SWORD_DUEL_VICTIM = ours("execution_sword_victim_duel_05");
     private static final ResourceLocation SPEAR_ATTACKER_FALLBACK = ours("execution_spear_attacker_fallback_01");
     private static final ResourceLocation SPEAR_VICTIM = ours("execution_spear_victim_01");
-    private static final ResourceLocation BLANK = spa("blank_loop");
 
     private final AbstractRecruitEntity recruit;
     private int lastSequence = Integer.MIN_VALUE;
@@ -33,7 +32,7 @@ final class RecruitExecutionLayer extends LodAwareModifierLayer {
 
     @Override
     public boolean isActive() {
-        return true;
+        return executing || ClientExecutionState.get(recruit.getId()) != null;
     }
 
     @Override
@@ -47,7 +46,7 @@ final class RecruitExecutionLayer extends LodAwareModifierLayer {
                 executing = true;
             }
         } else if (executing) {
-            switchToBlank();
+            setAnimation(null);
             executing = false;
         }
 
@@ -100,25 +99,8 @@ final class RecruitExecutionLayer extends LodAwareModifierLayer {
         }
     }
 
-    private void switchToBlank() {
-        KeyframeAnimation data = PlayerAnimationRegistry.getAnimation(BLANK);
-        if (data == null) {
-            setAnimation(null);
-            return;
-        }
-        KeyframeAnimationPlayer player = new KeyframeAnimationPlayer(data);
-        if (getAnimation() == null) {
-            setAnimation(player);
-        } else {
-            replaceAnimationWithFade(AbstractFadeModifier.standardFadeIn(3, Ease.INOUTSINE), player);
-        }
-    }
-
     private static ResourceLocation ours(String path) {
         return new ResourceLocation(RecruitsSeriousAnimations.MOD_ID, path);
     }
 
-    private static ResourceLocation spa(String path) {
-        return new ResourceLocation("seriousplayeranimations", path);
-    }
 }

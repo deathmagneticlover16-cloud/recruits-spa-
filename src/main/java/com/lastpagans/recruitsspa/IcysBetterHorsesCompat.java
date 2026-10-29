@@ -6,6 +6,7 @@ import com.talhanation.recruits.entities.AbstractRecruitEntity;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -14,9 +15,9 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.scores.Team;
 import net.minecraftforge.common.ToolActions;
-import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.living.LivingEvent;
 import net.minecraftforge.event.server.ServerAboutToStartEvent;
+import net.minecraftforge.event.server.ServerStoppingEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.ModList;
 
@@ -27,11 +28,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.UUID;
 
 /** Common-side optional integration. No Icy classes are linked directly. */
 final class IcysBetterHorsesCompat {
+    private static final boolean ICYS_LOADED = ModList.get().isLoaded("icys_better_horses");
     private static final ResourceLocation CHARGE_THUD =
             new ResourceLocation("icys-better-horses", "horse_charge_thud");
     private static final List<String> ICYS_MOUNTS = List.of(
@@ -58,7 +59,11 @@ final class IcysBetterHorsesCompat {
     private static final int GAIT_TROT = 2;
     private static final int GAIT_CANTER = 3;
     private static final int GAIT_GALLOP = 4;
-    private static final Set<AbstractRecruitEntity> MOUNTED_BLOCKERS = new HashSet<>();
+    private static long lastCleanupTick = Long.MIN_VALUE;
+    private static long combatConfigTick = Long.MIN_VALUE;
+    private static boolean cachedCombatEnabled;
+    private static SoundEvent chargeThudSound;
+    private static boolean chargeThudResolved;
     private static Method horseDataOf;
     private static Method setGaitGear;
     private static Method chargeStrike;
@@ -68,12 +73,20 @@ final class IcysBetterHorsesCompat {
 
     @SubscribeEvent
     public void onServerAboutToStart(ServerAboutToStartEvent event) {
-        if (!ModList.get().isLoaded("icys_better_horses")) {
+        if (!ICYS_LOADED) {
             return;
         }
         List<? extends String> configured = RecruitsServerConfig.MountWhiteList.get();
         ArrayList<String> merged = new ArrayList<>(configured);
-        if (merged.addAll(ICYS_MOUNTS.stream().filter(id -> !merged.contains(id)).toList())) {
+        HashSet<String> knownMounts = new HashSet<>(merged);
+        boolean changed = false;
+        for (String mount : ICYS_MOUNTS) {
+            if (knownMounts.add(mount)) {
+                merged.add(mount);
+                changed = true;
+            }
+        }
+        if (changed) {
             RecruitsServerConfig.MountWhiteList.set(merged);
             RecruitsServerConfig.SERVER.save();
         }
@@ -81,25 +94,27 @@ final class IcysBetterHorsesCompat {
 
     @SubscribeEvent
     public void onLivingTick(LivingEvent.LivingTickEvent event) {
-        if (!(event.getEntity() instanceof AbstractRecruitEntity recruit)) {
+        if (!(event.getEntity() instanceof AbstractRecruitEntity recruit)
+                || !(recruit.level() instanceof ServerLevel level)) {
             return;
         }
-        if (recruit.level() instanceof ServerLevel level && isMountedBlocking(recruit)) {
-            MOUNTED_BLOCKERS.add(recruit);
+        if (isMountedBlocking(recruit)) {
+            keepMountedShieldSpeed(recruit);
         }
-        if (ModList.get().isLoaded("icys_better_horses") && recruit.level() instanceof ServerLevel level) {
+        if (ICYS_LOADED) {
+            cleanupStateOnce(level.getGameTime());
             updateRecruitHorseGait(level, recruit);
             trample(level, recruit);
         }
     }
 
     @SubscribeEvent
-    public void onServerTick(TickEvent.ServerTickEvent event) {
-        if (event.phase != TickEvent.Phase.END) {
-            return;
-        }
-        MOUNTED_BLOCKERS.forEach(IcysBetterHorsesCompat::keepMountedShieldSpeed);
-        MOUNTED_BLOCKERS.clear();
+    public void onServerStopping(ServerStoppingEvent event) {
+        LAST_TRAMPLE.clear();
+        CHARGE_WARMUPS.clear();
+        GAIT_TRANSITIONS.clear();
+        lastCleanupTick = Long.MIN_VALUE;
+        combatConfigTick = Long.MIN_VALUE;
     }
 
     private static boolean isMountedBlocking(AbstractRecruitEntity recruit) {
@@ -111,9 +126,6 @@ final class IcysBetterHorsesCompat {
     }
 
     private static void keepMountedShieldSpeed(AbstractRecruitEntity recruit) {
-        if (!isMountedBlocking(recruit)) {
-            return;
-        }
         var speed = recruit.getAttribute(Attributes.MOVEMENT_SPEED);
         if (speed != null && speed.getBaseValue() < 0.3D) {
             speed.setBaseValue(0.3D);
@@ -130,13 +142,25 @@ final class IcysBetterHorsesCompat {
             CHARGE_WARMUPS.remove(horse.getUUID());
             return;
         }
-        if (!chargeIsReady(horse, now) || !resolveReflection() || !combatEnabled()) {
+        if (!chargeIsReady(horse, now) || !resolveReflection() || !combatEnabled(now)) {
+            return;
+        }
+        // Spread cavalry scans over alternating ticks. The enlarged forward box
+        // covers the skipped movement interval without concentrating every horse
+        // query on the same server tick.
+        if (((now + horse.getId()) & 1L) != 0L) {
             return;
         }
 
         var direction = horse.getDeltaMovement().multiply(1.0D, 0.0D, 1.0D).normalize();
-        var hitbox = horse.getBoundingBox().inflate(0.3D).move(direction.scale(0.5D));
+        var hitbox = horse.getBoundingBox().inflate(0.35D).move(direction.scale(0.65D));
         boolean broadcastImpactSound = true;
+        Object horseData;
+        try {
+            horseData = horseDataOf.invoke(null, horse);
+        } catch (ReflectiveOperationException | RuntimeException ignored) {
+            return;
+        }
         for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, hitbox)) {
             if (target == horse || target == recruit || horse.hasPassenger(target)
                     || isFriendly(recruit, target)
@@ -148,7 +172,6 @@ final class IcysBetterHorsesCompat {
                 continue;
             }
             try {
-                Object horseData = horseDataOf.invoke(null, horse);
                 chargeStrike.invoke(null, level, horse, horseData, target);
                 LAST_TRAMPLE.put(target.getUUID(), now);
                 if (broadcastImpactSound) {
@@ -159,16 +182,14 @@ final class IcysBetterHorsesCompat {
                 return;
             }
         }
-        if ((now & 255L) == 0L) {
-            LAST_TRAMPLE.entrySet().removeIf(entry -> now - entry.getValue() > 200L);
-            CHARGE_WARMUPS.entrySet().removeIf(entry -> now - entry.getValue().lastMovingTick > 200L);
-        }
     }
 
     private static void playChargeThud(ServerLevel level, AbstractHorse horse) {
-        BuiltInRegistries.SOUND_EVENT.getOptional(CHARGE_THUD).ifPresent(sound ->
-                level.playSound(null, horse.getX(), horse.getY(), horse.getZ(), sound,
-                        SoundSource.NEUTRAL, 0.375F, 0.95F + horse.getRandom().nextFloat() * 0.1F));
+        SoundEvent sound = chargeThudSound();
+        if (sound != null) {
+            level.playSound(null, horse.getX(), horse.getY(), horse.getZ(), sound,
+                    SoundSource.NEUTRAL, 0.375F, 0.95F + horse.getRandom().nextFloat() * 0.1F);
+        }
     }
 
     private static void updateRecruitHorseGait(ServerLevel level, AbstractRecruitEntity recruit) {
@@ -224,9 +245,24 @@ final class IcysBetterHorsesCompat {
             }
         }
 
-        if ((now & 255L) == 0L) {
-            GAIT_TRANSITIONS.entrySet().removeIf(entry -> now - entry.getValue().lastTick > 200L);
+    }
+
+    private static void cleanupStateOnce(long now) {
+        if ((now & 255L) != 0L || lastCleanupTick == now) {
+            return;
         }
+        lastCleanupTick = now;
+        LAST_TRAMPLE.entrySet().removeIf(entry -> now - entry.getValue() > 200L);
+        CHARGE_WARMUPS.entrySet().removeIf(entry -> now - entry.getValue().lastMovingTick > 200L);
+        GAIT_TRANSITIONS.entrySet().removeIf(entry -> now - entry.getValue().lastTick > 200L);
+    }
+
+    private static SoundEvent chargeThudSound() {
+        if (!chargeThudResolved) {
+            chargeThudResolved = true;
+            chargeThudSound = BuiltInRegistries.SOUND_EVENT.getOptional(CHARGE_THUD).orElse(null);
+        }
+        return chargeThudSound;
     }
 
     private static boolean chargeIsReady(AbstractHorse horse, long now) {
@@ -242,11 +278,12 @@ final class IcysBetterHorsesCompat {
     private static boolean isFriendly(AbstractRecruitEntity rider, LivingEntity collisionTarget) {
         LivingEntity affiliation = collisionTarget;
         if (collisionTarget instanceof AbstractHorse targetHorse) {
-            affiliation = targetHorse.getPassengers().stream()
-                    .filter(passenger -> passenger instanceof AbstractRecruitEntity || passenger instanceof Player)
-                    .map(LivingEntity.class::cast)
-                    .findFirst()
-                    .orElse(collisionTarget);
+            for (var passenger : targetHorse.getPassengers()) {
+                if (passenger instanceof AbstractRecruitEntity || passenger instanceof Player) {
+                    affiliation = (LivingEntity) passenger;
+                    break;
+                }
+            }
         }
 
         UUID riderOwner = rider.getOwnerUUID();
@@ -289,35 +326,45 @@ final class IcysBetterHorsesCompat {
         GALLOP
     }
 
-    private static synchronized boolean resolveReflection() {
+    private static boolean resolveReflection() {
         if (reflectionResolved) {
             return horseDataOf != null;
         }
-        reflectionResolved = true;
-        try {
-            Class<?> horseData = Class.forName("icy.betterhorses.net.IHorseData");
-            Class<?> horseCombat = Class.forName("icy.betterhorses.net.feature.HorseCombat");
-            Class<?> config = Class.forName("icy.betterhorses.net.BhConfig");
-            horseDataOf = horseData.getMethod("of", AbstractHorse.class);
-            setGaitGear = horseData.getMethod("bh_setGaitGear", int.class);
-            chargeStrike = horseCombat.getMethod(
-                    "chargeStrike", ServerLevel.class, AbstractHorse.class, horseData, LivingEntity.class
-            );
-            mayTarget = horseCombat.getMethod("mayTarget", LivingEntity.class);
-            horseCombatEnabled = config.getMethod("horseCombatEnabled");
-            return true;
-        } catch (ReflectiveOperationException | LinkageError ignored) {
-            horseDataOf = null;
-            return false;
+        synchronized (IcysBetterHorsesCompat.class) {
+            if (reflectionResolved) {
+                return horseDataOf != null;
+            }
+            reflectionResolved = true;
+            try {
+                Class<?> horseData = Class.forName("icy.betterhorses.net.IHorseData");
+                Class<?> horseCombat = Class.forName("icy.betterhorses.net.feature.HorseCombat");
+                Class<?> config = Class.forName("icy.betterhorses.net.BhConfig");
+                horseDataOf = horseData.getMethod("of", AbstractHorse.class);
+                setGaitGear = horseData.getMethod("bh_setGaitGear", int.class);
+                chargeStrike = horseCombat.getMethod(
+                        "chargeStrike", ServerLevel.class, AbstractHorse.class, horseData, LivingEntity.class
+                );
+                mayTarget = horseCombat.getMethod("mayTarget", LivingEntity.class);
+                horseCombatEnabled = config.getMethod("horseCombatEnabled");
+                return true;
+            } catch (ReflectiveOperationException | LinkageError ignored) {
+                horseDataOf = null;
+                return false;
+            }
         }
     }
 
-    private static boolean combatEnabled() {
-        try {
-            return Boolean.TRUE.equals(horseCombatEnabled.invoke(null));
-        } catch (ReflectiveOperationException | RuntimeException ignored) {
-            return false;
+    private static boolean combatEnabled(long now) {
+        if (combatConfigTick == now) {
+            return cachedCombatEnabled;
         }
+        try {
+            cachedCombatEnabled = Boolean.TRUE.equals(horseCombatEnabled.invoke(null));
+        } catch (ReflectiveOperationException | RuntimeException ignored) {
+            cachedCombatEnabled = false;
+        }
+        combatConfigTick = now;
+        return cachedCombatEnabled;
     }
 
     private static boolean mayTarget(LivingEntity target) {

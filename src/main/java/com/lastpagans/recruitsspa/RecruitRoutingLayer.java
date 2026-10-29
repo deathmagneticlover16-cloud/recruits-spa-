@@ -20,11 +20,14 @@ final class RecruitRoutingLayer extends LodAwareModifierLayer {
         super(recruit);
         this.recruit = recruit;
     }
-    @Override public boolean isActive() { return true; }
+    @Override
+    public boolean isActive() {
+        return routing || isRouting();
+    }
 
     @Override
     public Vec3f get3DTransform(String partName, TransformType type, float tickDelta, Vec3f value0) {
-        if (BetsyRossCompat.isHoldingStandard(recruit) && BetsyRossCompat.isArmPart(partName)) {
+        if (BetsyRossCompat.isArmPart(partName) && BetsyRossCompat.isHoldingStandard(recruit)) {
             return value0;
         }
         return super.get3DTransform(partName, type, tickDelta, value0);
@@ -32,13 +35,20 @@ final class RecruitRoutingLayer extends LodAwareModifierLayer {
 
     @Override
     public void tick() {
-        boolean shouldRoute = false;
-        try { shouldRoute = recruit.getFleeing(); } catch (Throwable ignored) {}
+        boolean shouldRoute = isRouting();
         if (shouldRoute != routing) {
             if (shouldRoute) start(); else setAnimation(null);
             routing = shouldRoute;
         }
         super.tick();
+    }
+
+    private boolean isRouting() {
+        try {
+            return recruit.getFleeing();
+        } catch (Throwable ignored) {
+            return false;
+        }
     }
 
     private void start() {

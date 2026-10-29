@@ -22,7 +22,7 @@ final class RecruitAnimationTestLayer extends ModifierLayer<IAnimation> {
 
     @Override
     public boolean isActive() {
-        return true;
+        return activePreview != null || ClientAnimationTestState.get(recruit.getId()) != null;
     }
 
     @Override

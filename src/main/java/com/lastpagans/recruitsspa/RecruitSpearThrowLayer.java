@@ -49,7 +49,6 @@ final class RecruitSpearThrowLayer extends LodAwareModifierLayer {
     private final SpeedModifier speedModifier;
 
     private boolean mirrored;
-    private int lastNetworkSequence;
     private boolean lastThrowableUsing;
     private boolean throwing;
     private boolean releasePhase;
@@ -68,13 +67,17 @@ final class RecruitSpearThrowLayer extends LodAwareModifierLayer {
 
     @Override
     public boolean isActive() {
-        return true;
+        if (throwing || lastThrowableUsing || ClientSpearThrowState.hasPending(recruit.getId())) {
+            return true;
+        }
+        ItemStack active = recruit.getUseItem();
+        return recruit.isUsingItem() && ThrowableWeaponDetector.isThrowable(active);
     }
 
     @Override
     public Vec3f get3DTransform(String partName, TransformType type, float tickDelta, Vec3f value0) {
         // A Betsy Ross standard must always keep Betsy Ross' own arm pose.
-        if (BetsyRossCompat.isHoldingStandard(recruit) && BetsyRossCompat.isArmPart(partName)) {
+        if (BetsyRossCompat.isArmPart(partName) && BetsyRossCompat.isHoldingStandard(recruit)) {
             return value0;
         }
 
@@ -113,9 +116,8 @@ final class RecruitSpearThrowLayer extends LodAwareModifierLayer {
     public void tick() {
         previousTwistBlend = twistBlend;
 
-        int networkSequence = ClientSpearThrowState.sequence(recruit.getId());
-        if (networkSequence != 0 && networkSequence != lastNetworkSequence) {
-            lastNetworkSequence = networkSequence;
+        int networkSequence = ClientSpearThrowState.consume(recruit.getId());
+        if (networkSequence != 0) {
             start(recruit.getUsedItemHand() == InteractionHand.OFF_HAND);
         }
 
