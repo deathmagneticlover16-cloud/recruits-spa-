@@ -11,7 +11,7 @@ import dev.kosmx.playerAnim.core.util.Vec3f;
 import dev.kosmx.playerAnim.minecraftApi.PlayerAnimationRegistry;
 import net.minecraft.resources.ResourceLocation;
 
-/** One-shot right-arm overlay imported from TriumphVar1; the item keeps its normal hand anchor. */
+/** Right-arm salute; item rotation changes while its normal hand anchor is preserved. */
 final class RecruitMountedTriumphLayer extends LodAwareModifierLayer {
     private static final ResourceLocation ANIMATION =
             new ResourceLocation(RecruitsSeriousAnimations.MOD_ID, "mounted_triumph_var_1");

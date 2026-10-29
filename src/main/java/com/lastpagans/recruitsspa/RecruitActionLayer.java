@@ -11,6 +11,7 @@ import dev.kosmx.playerAnim.core.data.KeyframeAnimation;
 import dev.kosmx.playerAnim.core.util.Ease;
 import dev.kosmx.playerAnim.core.util.Vec3f;
 import dev.kosmx.playerAnim.minecraftApi.PlayerAnimationRegistry;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
@@ -217,20 +218,24 @@ final class RecruitActionLayer extends LodAwareModifierLayer {
             return Action.CROSSBOW_HOLD;
         }
 
-        // Mounted melee recruits should not inherit SPA's raised reins/arm pose
-        // while engaging a target. Give the weapon hand a low combat-ready carry
-        // instead. Better Mob Combat still overrides this during the actual hit.
-        if (recruit.getTarget() != null && recruit.isPassenger() && isHorseLike(recruit.getVehicle())) {
-            String use = useAnimationName(main);
-            if (!"BOW".equals(use)
-                    && !"CROSSBOW".equals(use)
-                    && !"BLOCK".equals(use)
-                    && !"EAT".equals(use)
-                    && !"DRINK".equals(use)) {
-                return Action.MOUNTED_MELEE_READY;
-            }
+        // This item offset is authored specifically for couched lances. Applying
+        // it to every mounted melee weapon moves swords, axes and pikes away from
+        // their normal hand transforms.
+        if (recruit.getTarget() != null
+                && recruit.isPassenger()
+                && isHorseLike(recruit.getVehicle())
+                && isLance(main)) {
+            return Action.MOUNTED_MELEE_READY;
         }
         return Action.NONE;
+    }
+
+    private static boolean isLance(ItemStack stack) {
+        if (stack == null || stack.isEmpty()) {
+            return false;
+        }
+        ResourceLocation itemId = BuiltInRegistries.ITEM.getKey(stack.getItem());
+        return itemId != null && itemId.getPath().contains("lance");
     }
 
     private boolean shouldPlayMeleeFallback() {

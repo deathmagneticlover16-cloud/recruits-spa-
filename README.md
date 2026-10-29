@@ -18,10 +18,12 @@ optional integrations.
 
 ## Mounted compatibility
 
-- The bundled Better Combat weapon attributes make the 26 supported Epic
-  Knights, Antique Legacy, Dark Ages Armory, and Slavic Armory spears use
+- The bundled Better Combat weapon attributes make the supported Epic Knights,
+  Antique Legacy, Dark Ages Armory, and Slavic Armory spears use
   `bettercombat:one_handed_stab_mounted` while mounted. Their existing foot
-  attacks and one-handed shield use are retained.
+  attacks and one-handed shield use are retained. Epic Knights pikes keep their
+  native two-handed definitions. The special mounted weapon offset applies only
+  to item IDs containing `lance`.
 - Mounted Recruits keep full movement speed while blocking with a shield.
 - RTS mods can trigger the 2.25-second `TriumphVar1` mounted weapon wave through
   `RecruitsAnimationsApi.playMountedTriumph(recruit)`. The API validates that
